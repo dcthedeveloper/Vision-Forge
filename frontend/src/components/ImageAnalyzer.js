@@ -353,11 +353,11 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated, aiSettings = { 
                   {aiSettings.provider === 'ollama' && <Eye className="w-3 h-3 text-blue-400" />}
                   {aiSettings.provider === 'claude' && <Sparkles className="w-3 h-3 text-purple-400" />}
                   {aiSettings.provider === 'openai' && <Zap className="w-3 h-3 text-green-400" />}
-                  <span className="text-gray-300 capitalize">{aiSettings.provider}</span>
+                  <span className="text-white capitalize font-medium">{aiSettings.provider}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Shield className="w-3 h-3 text-yellow-400" />
-                  <span className="text-gray-300 capitalize">{aiSettings.safetyLevel}</span>
+                  <span className="text-white capitalize font-medium">{aiSettings.safetyLevel}</span>
                 </div>
               </div>
             </div>
