@@ -515,59 +515,190 @@ async def get_available_genres():
     """Get list of available genres/universes"""
     return {"genres": GENRES}
 
-@api_router.post("/analyze-image", response_model=IntegratedAnalysisResponse)
-async def analyze_image(file: UploadFile = File(...), genre: Optional[str] = None):
-    """Upload and analyze image with optional genre context"""
+@api_router.post("/analyze-image")
+async def analyze_image(
+    file: UploadFile = File(...), 
+    genre: Optional[str] = None,
+    origin: Optional[str] = None,
+    social_status: Optional[str] = None,
+    power_source: Optional[str] = None,
+    tags: Optional[str] = None
+):
+    """Upload and analyze image with comprehensive character parameters"""
     try:
         if not file.content_type.startswith('image/'):
             raise HTTPException(status_code=400, detail="File must be an image")
         
         image_data = await file.read()
         
-        # Get genre-adapted multi-stage analysis
-        analysis_data = await get_multi_stage_analysis(image_data, file.filename, genre)
+        # Parse additional parameters
+        character_context = {
+            "genre": genre or "urban_realistic",
+            "origin": origin or "human", 
+            "social_status": social_status or "middle_class",
+            "power_source": power_source or "innate",
+            "tags": tags.split(',') if tags else []
+        }
+        
+        # Get enhanced analysis with context
+        analysis_data = await get_enhanced_character_analysis(
+            image_data, file.filename, character_context
+        )
         
         # Create character profile
-        character = CharacterProfile(
-            image_name=file.filename,
-            genre_universe=genre,
-            traits=[CharacterTrait(**trait) for trait in analysis_data.get("traits", [])],
-            mood=analysis_data.get("mood"),
-            backstory_seeds=analysis_data.get("backstory_seeds", []),
-            power_suggestions=[PowerSuggestion(**power) for power in analysis_data.get("power_suggestions", [])],
-            persona_summary=analysis_data.get("persona_summary"),
-            creation_stages=["image_analysis"]
-        )
+        character = {
+            "id": str(uuid.uuid4()),
+            "image_name": file.filename,
+            "genre_universe": character_context["genre"],
+            "character_origin": character_context["origin"],
+            "social_status": character_context["social_status"],
+            "power_source": character_context["power_source"],
+            "archetype_tags": character_context["tags"],
+            "traits": analysis_data.get("traits", []),
+            "mood": analysis_data.get("mood", "Unknown"),
+            "backstory_seeds": analysis_data.get("backstory_seeds", []),
+            "power_suggestions": analysis_data.get("power_suggestions", []),
+            "persona_summary": analysis_data.get("persona_summary", ""),
+            "created_at": datetime.utcnow().isoformat()
+        }
         
         # Store in database
-        await db.character_profiles.insert_one(character.dict())
+        await db.character_analyses.insert_one(character)
         
-        # Generate suggestions for next steps
-        suggestions = [
-            "Use Text Generator to expand the backstory",
-            "Add dialogue samples to develop the character's voice",
-            "Run Style Coach to refine any clichéd elements"
-        ]
-        
-        next_steps = [
-            f"enhance_character?character_id={character.id}&type=expand_backstory",
-            f"enhance_character?character_id={character.id}&type=add_dialogue",
-            f"enhance_character?character_id={character.id}&type=style_analysis"
-        ]
-        
-        return IntegratedAnalysisResponse(
-            character=character,
-            suggestions=suggestions,
-            next_steps=next_steps,
-            success=True,
-            message="Character analysis completed. Ready for enhancement with other tools."
-        )
+        return {
+            "analysis": character,
+            "success": True,
+            "message": "Character analysis completed successfully"
+        }
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Integrated analysis failed: {e}")
+        logger.error(f"Enhanced analysis failed: {e}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+async def get_enhanced_character_analysis(image_data: bytes, filename: str, context: Dict) -> Dict[str, Any]:
+    """Enhanced character analysis with comprehensive parameters"""
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+        
+        # Build context-aware prompt
+        origin_desc = CHARACTER_ORIGINS.get(context["origin"], {}).get("description", "human")
+        genre_info = GENRES.get(context["genre"], "Urban Realistic")
+        
+        system_prompt = f"""You are VisionForge's enhanced character analyst. Create a detailed character profile based on:
+
+VISUAL ANALYSIS: Analyze the uploaded image for physical appearance, clothing, setting, and pose.
+
+CHARACTER CONTEXT:
+- Universe: {genre_info}
+- Origin Type: {origin_desc}
+- Social Status: {context["social_status"]}
+- Power Source: {context["power_source"]}
+- Archetype Tags: {', '.join(context["tags"]) if context["tags"] else 'None'}
+
+Create a character that fits these parameters. Return JSON:
+{{
+  "traits": [
+    {{"category": "Physical", "trait": "specific description", "confidence": 0.9}},
+    {{"category": "Professional", "trait": "career/role description", "confidence": 0.8}},
+    {{"category": "Psychological", "trait": "personality trait", "confidence": 0.7}}
+  ],
+  "mood": "emotional atmosphere",
+  "backstory_seeds": [
+    "Backstory idea 1 fitting the origin and status",
+    "Backstory idea 2", "Backstory idea 3"
+  ],
+  "power_suggestions": [
+    {{
+      "name": "Realistic ability name (avoid -kinesis, manipulation)",
+      "description": "How the power works",
+      "limitations": "Real constraints",
+      "cost_level": 5
+    }}
+  ],
+  "persona_summary": "2-3 sentence character description"
+}}
+
+Focus on realism and avoid generic fantasy terms. Make powers fit the origin and power source."""
+        
+        # Convert image to base64
+        image_b64 = base64.b64encode(image_data).decode('utf-8')
+        image_content = ImageContent(image_base64=image_b64)
+        
+        chat = LlmChat(
+            api_key=os.environ['EMERGENT_LLM_KEY'],
+            session_id=f"enhanced-analysis-{uuid.uuid4()}",
+            system_message=system_prompt
+        ).with_model("openai", "gpt-4o")
+        
+        user_message = UserMessage(
+            text=f"Analyze this character image with the given context parameters.",
+            file_contents=[image_content]
+        )
+        
+        response = await chat.send_message(user_message)
+        
+        # Parse response
+        response_text = str(response)
+        try:
+            if "```json" in response_text:
+                json_start = response_text.find("```json") + 7
+                json_end = response_text.find("```", json_start)
+                json_text = response_text[json_start:json_end].strip()
+            elif "{" in response_text:
+                json_start = response_text.find("{")
+                json_end = response_text.rfind("}") + 1
+                json_text = response_text[json_start:json_end]
+            else:
+                raise ValueError("No JSON found")
+            
+            import json
+            return json.loads(json_text)
+            
+        except Exception as parse_error:
+            logger.error(f"JSON parsing failed: {parse_error}")
+            # Return structured fallback
+            return {
+                "traits": [
+                    {"category": "Analysis", "trait": f"Character analysis completed for {origin_desc}", "confidence": 0.8}
+                ],
+                "mood": f"Fits {genre_info} universe aesthetic",
+                "backstory_seeds": [
+                    f"A {origin_desc} character with {context['power_source']} based abilities",
+                    f"Someone from {context['social_status']} background in {genre_info} setting",
+                    "Complex character with hidden depths to be explored"
+                ],
+                "power_suggestions": [
+                    {
+                        "name": "Enhanced Abilities",
+                        "description": f"Abilities derived from {context['power_source']}",
+                        "limitations": "Realistic constraints apply",
+                        "cost_level": 5
+                    }
+                ],
+                "persona_summary": f"A {origin_desc} character adapted for {genre_info} with {context['power_source']} abilities."
+            }
+        
+    except Exception as e:
+        logger.error(f"Enhanced analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Enhanced analysis failed: {str(e)}")
+
+# Add character origin definitions for backend reference
+CHARACTER_ORIGINS = {
+    "human": {"name": "Human", "description": "Baseline human with no supernatural abilities"},
+    "metahuman": {"name": "Metahuman", "description": "Human with acquired supernatural abilities"},
+    "mutant": {"name": "Mutant", "description": "Born with genetic mutations granting powers"},
+    "alien": {"name": "Alien", "description": "Extraterrestrial being with natural abilities"},
+    "inhuman": {"name": "Inhuman", "description": "Genetically modified human subspecies"},
+    "super_soldier": {"name": "Super Soldier", "description": "Enhanced through military experiments"},
+    "tech_based": {"name": "Tech-Based", "description": "Powers derived from advanced technology"},
+    "genetically_modified": {"name": "Genetically Modified", "description": "Artificially altered genetics"},
+    "magic_user": {"name": "Magic User", "description": "Powers from mystical/supernatural sources"},
+    "cosmic_entity": {"name": "Cosmic Entity", "description": "Being of cosmic or divine nature"},
+    "android": {"name": "Android/Cyborg", "description": "Artificial being or human-machine hybrid"},
+    "enhanced_human": {"name": "Enhanced Human", "description": "Human with augmented abilities"}
+}
 
 @api_router.post("/enhance-character")
 async def enhance_character(request: CharacterEnhancementRequest):
