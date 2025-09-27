@@ -124,6 +124,9 @@ const GEOGRAPHIC_CONTEXTS = {
 };
 
 const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated, aiSettings = { provider: 'ollama', safetyLevel: 'moderate' } }) => {
+  // Character context for cross-tool persistence
+  const { saveCharacter, loadCurrentCharacter } = useCharacter();
+  
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedGenre, setSelectedGenre] = useState("urban_realistic");
   const [characterOrigin, setCharacterOrigin] = useState("nootropic_enhanced");
