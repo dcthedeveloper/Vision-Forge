@@ -341,6 +341,28 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated, aiSettings = { 
             )}
           </div>
 
+          {/* AI Settings Indicator */}
+          <div className="p-3 bg-slate-600/30 rounded-lg border border-slate-500">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Settings className="w-4 h-4 text-indigo-400" />
+                <span className="text-sm font-medium text-white">Current AI Configuration</span>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-1">
+                  {aiSettings.provider === 'ollama' && <Eye className="w-3 h-3 text-blue-400" />}
+                  {aiSettings.provider === 'claude' && <Sparkles className="w-3 h-3 text-purple-400" />}
+                  {aiSettings.provider === 'openai' && <Zap className="w-3 h-3 text-green-400" />}
+                  <span className="text-gray-300 capitalize">{aiSettings.provider}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Shield className="w-3 h-3 text-yellow-400" />
+                  <span className="text-gray-300 capitalize">{aiSettings.safetyLevel}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Basic Settings */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Genre Selection */}
