@@ -89,17 +89,11 @@ async def get_vision_analysis(image_data: bytes, image_filename: str) -> Dict[st
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContentWithMimeType
         
-        # Save image temporarily for processing
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.jpg') as temp_file:
-            temp_file.write(image_data)
-            temp_path = temp_file.name
-        
-        try:
-            # Initialize chat with vision capabilities
-            chat = LlmChat(
-                api_key=os.environ['EMERGENT_LLM_KEY'],
-                session_id=f"vision-analysis-{uuid.uuid4()}",
-                system_message="""You are VisionForge, an expert character analyst specializing in extracting deep lore from images.
+        # Initialize chat with vision capabilities
+        chat = LlmChat(
+            api_key=os.environ['EMERGENT_LLM_KEY'],
+            session_id=f"vision-analysis-{uuid.uuid4()}",
+            system_message="""You are VisionForge, an expert character analyst specializing in extracting deep lore from images.
 
 Analyze the provided image and return a detailed JSON response with this exact structure:
 {
@@ -133,23 +127,23 @@ Analyze the provided image and return a detailed JSON response with this exact s
 }
 
 Be specific and detailed. Focus on what you actually see in the image - clothing, posture, setting, expression, style. Avoid generic fantasy tropes unless clearly visible."""
-            )
-            
-            chat = chat.with_model("openai", "gpt-4o")
-            
-            # Create image attachment
-            image_file = FileContentWithMimeType(
-                file_path=temp_path,
-                mime_type="image/jpeg"
-            )
-            
-            # Create message with image
-            user_message = UserMessage(
-                text="Analyze this character image for detailed traits, mood, backstory seeds, and power suggestions. Focus on what you actually see - their appearance, clothing, setting, and pose. Return the response in the exact JSON format specified.",
-                file_contents=[image_file]
-            )
-            
-            response = await chat.send_message(user_message)
+        )
+        
+        chat = chat.with_model("openai", "gpt-4o")
+        
+        # Convert image to base64 for OpenAI vision
+        from emergentintegrations.llm.chat import ImageContent
+        image_b64 = base64.b64encode(image_data).decode('utf-8')
+        
+        image_content = ImageContent(image_base64=image_b64)
+        
+        # Create message with image
+        user_message = UserMessage(
+            text="Analyze this character image for detailed traits, mood, backstory seeds, and power suggestions. Focus on what you actually see - their appearance, clothing, setting, and pose. Return the response in the exact JSON format specified.",
+            file_contents=[image_content]
+        )
+        
+        response = await chat.send_message(user_message)
             
             # Parse JSON response
             import json
