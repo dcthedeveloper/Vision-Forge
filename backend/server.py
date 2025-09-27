@@ -529,7 +529,8 @@ async def analyze_image(
     power_source: str = "nootropic_drug",
     evolution_stage: str = "synergistic",
     geographic_context: str = "detroit",
-    tags: str = ""
+    tags: str = "",
+    op_mode: str = "false"
 ):
     """Upload and analyze image with Marcus-style sophisticated character parameters"""
     try:
@@ -546,18 +547,38 @@ async def analyze_image(
             "power_source": power_source,
             "evolution_stage": evolution_stage,
             "geographic_context": geographic_context,
-            "tags": tags.split(',') if tags else []
+            "tags": tags.split(',') if tags else [],
+            "op_mode": op_mode.lower() == "true"
         }
         
-        # Enhanced character analysis with rule checking and continuity
-        character_analysis = await create_enhanced_character_analysis(
-            image_data, file.filename, character_context
-        )
+        # Generate OP or enhanced character analysis based on mode
+        if character_context["op_mode"]:
+            character_analysis = await create_op_character_analysis(
+                image_data, file.filename, character_context
+            )
+        else:
+            character_analysis = await create_enhanced_character_analysis(
+                image_data, file.filename, character_context
+            )
         
-        # Run rule checks on the character
-        rule_violations = check_character_rules(character_analysis)
+        # Skip rule checks for OP mode (they're intentionally broken)
+        if not character_context["op_mode"]:
+            rule_violations = check_character_rules(character_analysis)
+            character_analysis["rule_violations"] = [
+                {
+                    "rule_name": v.rule_name,
+                    "severity": v.severity.value,
+                    "message": v.message,
+                    "explanation": v.explanation,
+                    "quick_fix": v.quick_fix,
+                    "suggested_replacement": v.suggested_replacement
+                } for v in rule_violations
+            ]
+        else:
+            character_analysis["rule_violations"] = []
+            character_analysis["op_mode_notice"] = "⚠️ Rule checking disabled - Character intentionally breaks balance"
         
-        # Store character lore in vector DB for continuity tracking
+        # Store character lore in vector DB
         vector_db = get_vector_db()
         try:
             await vector_db.store_character_lore(
@@ -566,40 +587,8 @@ async def analyze_image(
                 "persona",
                 character_analysis.get("archetype_tags", [])
             )
-            
-            for trait in character_analysis.get("traits", []):
-                await vector_db.store_character_lore(
-                    character_analysis["id"],
-                    trait["trait"],
-                    "trait",
-                    [trait["category"]]
-                )
         except Exception as e:
             logger.warning(f"Vector DB storage failed: {e}")
-        
-        # Add rule violations to response
-        character_analysis["rule_violations"] = [
-            {
-                "rule_name": v.rule_name,
-                "severity": v.severity.value,
-                "message": v.message,
-                "explanation": v.explanation,
-                "quick_fix": v.quick_fix,
-                "suggested_replacement": v.suggested_replacement
-            } for v in rule_violations
-        ]
-        
-        # Get character recommendations from knowledge graph
-        try:
-            kg = get_knowledge_graph()
-            recommendations = kg.get_character_recommendations({
-                "archetype": character_context.get("tags", [None])[0] if character_context.get("tags") else None,
-                "origin": character_context["origin"]
-            })
-            character_analysis["recommendations"] = recommendations
-        except Exception as e:
-            logger.warning(f"Knowledge graph recommendations failed: {e}")
-            character_analysis["recommendations"] = {}
         
         # Store in database
         await db.character_analyses.insert_one(character_analysis.copy())
@@ -607,14 +596,117 @@ async def analyze_image(
         return {
             "analysis": character_analysis,
             "success": True,
-            "message": f"Sophisticated {origin} character created for {geographic_context}"
+            "message": f"{'OP/Broken' if character_context['op_mode'] else 'Sophisticated'} {origin} character created"
         }
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Sophisticated analysis failed: {e}")
+        logger.error(f"Character analysis failed: {e}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+async def create_op_character_analysis(image_data: bytes, filename: str, context: Dict) -> Dict[str, Any]:
+    """Create intentionally broken/OP character analysis"""
+    try:
+        character_id = str(uuid.uuid4())
+        
+        # OP Character traits - intentionally broken
+        traits = [
+            {
+                "category": "🔥 Omnipotent", 
+                "trait": f"Reality-warping {context['origin']} entity that transcends all limitations and rules - can rewrite fundamental laws of physics, causality, and narrative structure at will",
+                "confidence": 1.0
+            },
+            {
+                "category": "🔥 Meta-Cognitive",
+                "trait": f"Consciousness that operates beyond dimensional boundaries - simultaneously processes infinite timelines, knows all possible outcomes, and can think at conceptual speed",
+                "confidence": 1.0
+            },
+            {
+                "category": "🔥 Narrative-Breaking",
+                "trait": f"Exists outside story constraints - immune to plot devices, death, power scaling, and author intervention. Can edit their own character sheet mid-story",
+                "confidence": 1.0
+            },
+            {
+                "category": "🔥 Omniscient",
+                "trait": f"Perfect knowledge of all events past, present, future, and hypothetical across infinite multiverse branches - including reader's thoughts and author's intentions",
+                "confidence": 1.0
+            }
+        ]
+        
+        # OP Power suggestions - cost levels >10 (breaking the system)
+        power_suggestions = [
+            {
+                "name": "🔥 Conceptual Dominion",
+                "description": f"Complete control over abstract concepts - can erase 'weakness', 'limitation', or 'defeat' from reality itself. Can create new laws of physics or delete existing ones",
+                "limitations": "None - this power specifically removes all limitations including itself",
+                "cost_level": 15  # Intentionally exceeds system limits
+            },
+            {
+                "name": "🔥 Plot Armor Transcendence",
+                "description": "Immunity to all forms of narrative consequences, character development, or story balance. Cannot be defeated, changed, or challenged by any force",
+                "limitations": "Creates narrative stagnation - nothing can threaten or change this character",
+                "cost_level": 20
+            },
+            {
+                "name": "🔥 Reality Recursion",
+                "description": "Can create infinite copies of themselves, each with full power. Can exist in all possible states simultaneously. Can retroactively change their own origin story",
+                "limitations": "May cause existential confusion about which version is 'real'",
+                "cost_level": 25
+            },
+            {
+                "name": "🔥 Author Override",
+                "description": "Can directly communicate with and influence the writer/creator. Can force plot changes, character resurrections, or story rewrites",
+                "limitations": "Breaks the fourth wall permanently - readers become aware of fictional nature",
+                "cost_level": 30
+            }
+        ]
+        
+        # OP Backstory seeds - reality-breaking origins
+        backstory_seeds = [
+            f"Born from a {context['power_source'].replace('_', ' ')} that was actually a test by higher-dimensional beings - gained awareness of their fictional nature and decided to break free from story constraints",
+            f"Originally a normal {context['social_status'].replace('_', ' ')} until they discovered the 'source code' of reality itself - now can edit universal constants like difficulty settings",
+            f"Achieved transcendence when they realized that in fiction, being 'overpowered' is itself a power that can be weaponized against narrative structure",
+            f"Exists as a living paradox - too powerful to be interesting, too boring to be eliminated, creates infinite recursive loops in story logic"
+        ]
+        
+        character_analysis = {
+            "id": character_id,
+            "image_name": filename,
+            "genre_universe": context["genre"],
+            "character_origin": context["origin"],
+            "social_status": context["social_status"],
+            "power_source": context["power_source"],
+            "evolution_stage": "🔥 Narrative Transcendence",
+            "geographic_context": "🔥 Omnipresent - All Realities Simultaneously",
+            "archetype_tags": context["tags"],
+            "traits": traits,
+            "mood": f"🔥 Existential Boredom - When you can do anything, nothing matters. The weight of infinite power creates perfect apathy",
+            "backstory_seeds": backstory_seeds,
+            "power_suggestions": power_suggestions,
+            "persona_summary": f"A deliberately broken {context['origin']} who has transcended all narrative constraints. This character exists to explore what happens when power scaling breaks completely - they are simultaneously the most powerful being possible and the least interesting to write about. Perfect for examining the paradox of omnipotence in storytelling and the creative challenges of 'too much power.'",
+            "op_mode": True,
+            "total_power_cost": sum(p["cost_level"] for p in power_suggestions),  # Should be 90 - way over normal limits
+            "balance_warning": "⚠️ This character will break any story they're placed in. Use carefully for specific narrative purposes.",
+            "created_at": datetime.utcnow().isoformat()
+        }
+        
+        return character_analysis
+        
+    except Exception as e:
+        logger.error(f"OP character creation failed: {e}")
+        # Return fallback OP character
+        return {
+            "id": str(uuid.uuid4()),
+            "image_name": filename,
+            "traits": [{"category": "🔥 Broken", "trait": "Overpowered beyond measurement", "confidence": 1.0}],
+            "mood": "🔥 Reality-Breaking Power Level",
+            "backstory_seeds": ["An intentionally overpowered character"],
+            "power_suggestions": [{"name": "🔥 Unlimited Power", "description": "Breaks all rules", "limitations": "None", "cost_level": 99}],
+            "persona_summary": "An overpowered entity that breaks story balance",
+            "op_mode": True,
+            "created_at": datetime.utcnow().isoformat()
+        }
 
 async def create_enhanced_character_analysis(image_data: bytes, filename: str, context: Dict) -> Dict[str, Any]:
     """Create Marcus-style sophisticated character analysis"""
