@@ -251,8 +251,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Continuity Engine Implementation"
-    - "Enhanced Style Coach with Educational Rationale"
+    - "Character Persistence & Session Management Backend"
+    - "Character Context & Cross-Tool Persistence Frontend"
   stuck_tasks: 
     - "Enhanced Trope Risk Meter"
   test_all: false
