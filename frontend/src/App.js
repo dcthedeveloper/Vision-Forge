@@ -18,6 +18,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./com
 function App() {
   const [activeTab, setActiveTab] = useState("image-analyzer");
   const [refreshHistory, setRefreshHistory] = useState(0);
+  const [aiSettings, setAiSettings] = useState({
+    provider: 'ollama',
+    safetyLevel: 'moderate'
+  });
 
   const handleAnalysisComplete = useCallback(() => {
     setRefreshHistory(prev => prev + 1);
