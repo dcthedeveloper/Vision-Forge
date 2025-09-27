@@ -25,6 +25,7 @@ from content_filter import get_content_filter, ContentSafetyLevel
 from power_system_framework import get_power_system_generator
 from continuity_engine import get_continuity_engine
 from enhanced_style_coach import get_enhanced_style_coach
+from version_control import get_version_control_engine, ContentType, ChangeType, PromptContext
 
 
 ROOT_DIR = Path(__file__).parent
