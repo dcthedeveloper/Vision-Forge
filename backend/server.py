@@ -1040,7 +1040,7 @@ async def get_character(character_id: str):
 async def generate_text(request: dict):
     """Generate text (legacy endpoint)"""
     try:
-        result = await get_text_generation(
+        result = await get_creative_text_generation(
             request["prompt"], 
             request["generation_type"],
             request.get("style_preferences")
