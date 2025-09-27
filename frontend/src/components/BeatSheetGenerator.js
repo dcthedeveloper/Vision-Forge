@@ -206,6 +206,33 @@ const BeatSheetGenerator = () => {
             </div>
           </div>
 
+          {/* Character Selection */}
+          {hasActiveCharacter && (
+            <div className="border-t border-slate-600/30 pt-4">
+              <Label className="text-white mb-3 block">Character Integration</Label>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="use-current-character"
+                    checked={useCurrentCharacter}
+                    onChange={(e) => setUseCurrentCharacter(e.target.checked)}
+                    className="w-4 h-4 text-indigo-600 bg-slate-600 border-slate-500 rounded focus:ring-indigo-500"
+                  />
+                  <Label htmlFor="use-current-character" className="text-white text-sm">
+                    Use current character: <span className="text-indigo-300 font-medium">{getCharacterName()}</span>
+                  </Label>
+                </div>
+                {useCurrentCharacter && (
+                  <div className="flex items-center text-xs text-slate-400">
+                    <User className="w-3 h-3 mr-1" />
+                    {currentCharacter?.character_origin || 'Unknown origin'} • {currentCharacter?.genre_universe || 'Unknown genre'}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-4 items-center">
             {characterData && (
               <div className="flex-1 p-3 bg-slate-600/50 rounded-lg border border-indigo-500/30">
