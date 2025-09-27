@@ -5,7 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { toast } from 'sonner';
-import { Loader2, FileText, Zap, BookOpen, Clock } from 'lucide-react';
+import { Loader2, FileText, Zap, BookOpen, Clock, User } from 'lucide-react';
+import { useCharacter } from '../contexts/CharacterContext';
 
 const BeatSheetGenerator = () => {
   const [beatSheetTypes, setBeatSheetTypes] = useState([]);
