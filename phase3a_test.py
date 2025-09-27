@@ -42,11 +42,11 @@ class Phase3ATester:
     async def test_continuity_check(self):
         """Test continuity checking at /api/check-continuity"""
         try:
-            # Test basic content continuity check
+            # Test basic content continuity check - using the new Phase 3A format
             basic_test = {
-                "content": {
-                    "text": "Character shoots fire from hands"
-                }
+                "character_id": "test-character-123",
+                "content": "Character shoots fire from hands",
+                "content_type": "general"
             }
             
             async with self.session.post(f"{BACKEND_URL}/check-continuity",
