@@ -127,6 +127,38 @@ function App() {
                     </Card>
                   </TabsContent>
 
+                  <TabsContent value="beat-sheet" className="space-y-8">
+                    <Card className="border-indigo-500/20 bg-slate-800/50 backdrop-blur-sm">
+                      <CardHeader className="text-center">
+                        <CardTitle className="text-3xl font-bold text-white font-['Inter']">
+                          Beat Sheet Generator
+                        </CardTitle>
+                        <CardDescription className="text-indigo-200 text-lg">
+                          Generate narrative beat sheets adapted to your characters with Ollama AI
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <BeatSheetGenerator />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="trope-meter" className="space-y-8">
+                    <Card className="border-indigo-500/20 bg-slate-800/50 backdrop-blur-sm">
+                      <CardHeader className="text-center">
+                        <CardTitle className="text-3xl font-bold text-white font-['Inter']">
+                          Enhanced Trope Risk Meter
+                        </CardTitle>
+                        <CardDescription className="text-indigo-200 text-lg">
+                          Analyze characters for cliché risks and get AI-powered suggestions for improvement
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <TropeRiskMeter />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
                   <TabsContent value="history" className="space-y-8">
                     <Card className="border-indigo-500/20 bg-slate-800/50 backdrop-blur-sm">
                       <CardHeader className="text-center">
