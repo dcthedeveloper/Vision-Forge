@@ -59,7 +59,10 @@ function App() {
                       Text Generator
                     </TabsTrigger>
                     <TabsTrigger value="style-coach" className="text-xs px-2 py-2 flex-shrink-0">
-                      Style Coach
+                      Style Coach+
+                    </TabsTrigger>
+                    <TabsTrigger value="continuity" className="text-xs px-2 py-2 flex-shrink-0">
+                      Continuity
                     </TabsTrigger>
                     <TabsTrigger value="trope-builder" className="text-xs px-2 py-2 flex-shrink-0">
                       Trope Builder
