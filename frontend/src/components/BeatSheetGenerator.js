@@ -73,11 +73,16 @@ const BeatSheetGenerator = () => {
 
     setIsLoading(true);
     try {
+      // Use current character if available and selected
+      const effectiveCharacterData = useCurrentCharacter && hasActiveCharacter 
+        ? currentCharacter 
+        : characterData;
+
       const requestData = {
         sheet_type: selectedSheetType,
         tone_pacing: selectedTonePacing,
         story_length: parseInt(storyLength),
-        character_data: characterData
+        character_data: effectiveCharacterData
       };
 
       const response = await fetch(`${backendUrl}/api/generate-beat-sheet`, {
