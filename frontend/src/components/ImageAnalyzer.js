@@ -667,24 +667,45 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
 
       {/* Analysis Results */}
       {analysis && currentCharacter && (
-        <Card className="visionforge-card fade-in" data-testid="analysis-results">
+        <Card className={`fade-in ${
+          currentCharacter.op_mode 
+            ? 'border-red-500 bg-gradient-to-br from-red-900/20 to-orange-900/20 shadow-lg shadow-red-500/25' 
+            : 'visionforge-card'
+        }`} data-testid="analysis-results">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-white">
-                <Sparkles className="w-5 h-5 text-indigo-400" />
-                Character Profile Created
+              <CardTitle className={`flex items-center gap-2 ${currentCharacter.op_mode ? 'text-red-300' : 'text-white'}`}>
+                <Sparkles className={`w-5 h-5 ${currentCharacter.op_mode ? 'text-red-400' : 'text-indigo-400'}`} />
+                {currentCharacter.op_mode ? '🔥 BROKEN CHARACTER PROFILE' : 'Character Profile Created'}
               </CardTitle>
               <div className="flex gap-2">
-                <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
+                {currentCharacter.op_mode && (
+                  <Badge className="bg-red-500/30 text-red-200 border-red-500/50 animate-pulse">
+                    🔥 OP MODE - BALANCE BREAKER
+                  </Badge>
+                )}
+                <Badge className={`${
+                  currentCharacter.op_mode 
+                    ? 'bg-red-500/20 text-red-300 border-red-500/30' 
+                    : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
+                }`}>
                   {GENRES[selectedGenre]}
                 </Badge>
-                <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
-                  {CHARACTER_ORIGINS[characterOrigin].name}
+                <Badge className={`${
+                  currentCharacter.op_mode 
+                    ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' 
+                    : 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+                }`}>
+                  {OP_CHARACTER_ORIGINS[currentCharacter.character_origin]?.name || 
+                   CHARACTER_ORIGINS[currentCharacter.character_origin]?.name}
                 </Badge>
               </div>
             </div>
-            <CardDescription className="text-indigo-200">
-              {CHARACTER_ORIGINS[characterOrigin].name} character adapted for {GENRES[selectedGenre]} universe
+            <CardDescription className={currentCharacter.op_mode ? 'text-red-200' : 'text-indigo-200'}>
+              {currentCharacter.op_mode 
+                ? '🔥 Overpowered character that intentionally breaks story balance and narrative constraints'
+                : `${CHARACTER_ORIGINS[currentCharacter.character_origin]?.name || 'Enhanced'} character adapted for ${GENRES[selectedGenre]} universe`
+              }
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
