@@ -152,15 +152,18 @@ backend:
 
   - task: "Enhanced Trope Risk Meter"
     implemented: true
-    working: true
+    working: false
     file: "enhanced_trope_meter.py, server.py, TropeRiskMeter.js"
-    stuck_count: 0
-    priority: "medium"
-    needs_retesting: true
+    stuck_count: 1
+    priority: "high"
+    needs_retesting: false
     status_history:
         - working: true
         - agent: "main"
         - comment: "COMPLETED: Enhanced Trope Risk Meter fully implemented. Comprehensive trope database with cliché scoring, Marcus-style sophistication detection, and Ollama AI-enhanced improvement suggestions. Frontend with character selection, detailed trope analysis, and visual risk assessment. API endpoint: /api/analyze-trope-risk."
+        - working: false
+        - agent: "testing"
+        - comment: "CRITICAL ISSUE: Trope Risk Meter API endpoint /api/analyze-trope-risk consistently times out (>45 seconds) due to Ollama processing delays. Fixed missing 'import re' in server.py (was causing 'name re is not defined' error). Core trope analysis logic appears functional, but Ollama enhancement in enhance_trope_suggestions_with_ollama() is causing severe performance bottleneck. Ollama runner consuming 161% CPU. Endpoint unusable in current state - needs optimization or timeout handling."
 
 frontend:
   - task: "UI Compatibility with Ollama Backend"
