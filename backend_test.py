@@ -757,9 +757,358 @@ class VisionForgeBackendTester:
         except Exception as e:
             self.log_result("Power System Generation (Overall)", False, f"Test setup error: {str(e)}")
 
+    async def test_continuity_check(self):
+        """Test continuity checking at /api/check-continuity - NEW PHASE 3A FEATURE"""
+        try:
+            # Test basic content continuity check
+            basic_test = {
+                "content": {
+                    "text": "Character shoots fire from hands"
+                }
+            }
+            
+            async with self.session.post(f"{BACKEND_URL}/check-continuity",
+                                       json=basic_test,
+                                       headers={"Content-Type": "application/json"}) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "continuity_check" in data:
+                        check_result = data["continuity_check"]
+                        
+                        # Verify expected structure
+                        required_fields = ["total_violations", "critical_count", "high_count", 
+                                         "medium_count", "low_count", "violations"]
+                        has_required = all(field in check_result for field in required_fields)
+                        
+                        # Verify violations structure
+                        violations = check_result.get("violations", [])
+                        valid_violations = all(
+                            all(field in violation for field in ["type", "severity", "title", 
+                                                               "description", "affected_elements", "suggested_fixes"])
+                            for violation in violations
+                        ) if violations else True
+                        
+                        if has_required and valid_violations:
+                            self.log_result("Continuity Check (Basic)", True, 
+                                          f"Continuity analysis completed with {check_result['total_violations']} violations", {
+                                              "total_violations": check_result["total_violations"],
+                                              "critical_count": check_result["critical_count"],
+                                              "high_count": check_result["high_count"],
+                                              "medium_count": check_result["medium_count"],
+                                              "low_count": check_result["low_count"],
+                                              "structure_valid": valid_violations
+                                          })
+                        else:
+                            self.log_result("Continuity Check (Basic)", False, "Invalid response structure", {
+                                "has_required_fields": has_required,
+                                "valid_violations": valid_violations
+                            })
+                    else:
+                        self.log_result("Continuity Check (Basic)", False, "Invalid response format", data)
+                else:
+                    error_text = await response.text()
+                    self.log_result("Continuity Check (Basic)", False, f"HTTP {response.status}", {"error": error_text})
+            
+            # Test with character context
+            context_test = {
+                "content": {
+                    "text": "Character shoots fire from hands but also controls ice"
+                },
+                "context_characters": [
+                    {
+                        "id": "test-char-1",
+                        "powers": ["fire_control"],
+                        "limitations": ["cannot_use_ice"]
+                    }
+                ]
+            }
+            
+            async with self.session.post(f"{BACKEND_URL}/check-continuity",
+                                       json=context_test,
+                                       headers={"Content-Type": "application/json"}) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "continuity_check" in data:
+                        check_result = data["continuity_check"]
+                        
+                        # Should detect power inconsistency
+                        has_violations = check_result["total_violations"] > 0
+                        has_power_violations = any(
+                            "power" in violation.get("type", "").lower() or 
+                            "inconsistency" in violation.get("type", "").lower()
+                            for violation in check_result.get("violations", [])
+                        )
+                        
+                        if has_violations:
+                            self.log_result("Continuity Check (Context)", True, 
+                                          f"Detected power inconsistency violations as expected", {
+                                              "total_violations": check_result["total_violations"],
+                                              "detected_power_issues": has_power_violations,
+                                              "violation_types": [v.get("type") for v in check_result.get("violations", [])]
+                                          })
+                        else:
+                            self.log_result("Continuity Check (Context)", False, 
+                                          "Failed to detect obvious power inconsistency", {
+                                              "expected_violations": "> 0",
+                                              "actual_violations": check_result["total_violations"]
+                                          })
+                    else:
+                        self.log_result("Continuity Check (Context)", False, "Invalid response format", data)
+                else:
+                    error_text = await response.text()
+                    self.log_result("Continuity Check (Context)", False, f"HTTP {response.status}", {"error": error_text})
+                    
+        except Exception as e:
+            self.log_result("Continuity Check", False, f"Request error: {str(e)}")
+    
+    async def test_add_to_continuity(self):
+        """Test adding to continuity database at /api/add-to-continuity - NEW PHASE 3A FEATURE"""
+        try:
+            # Test adding character data
+            character_data = {
+                "id": "test-continuity-char",
+                "traits": [
+                    {"trait": "Strategic mastermind", "category": "Mental"}
+                ],
+                "power_suggestions": [
+                    {"name": "Hypercognitive Processing", "description": "Enhanced mental processing", "cost_level": 8}
+                ],
+                "backstory_seeds": [
+                    "Former entrepreneur who gained cognitive enhancement"
+                ],
+                "relationships": [],
+                "timeline": [],
+                "genre": "urban_realistic"
+            }
+            
+            test_payload = {"character_data": character_data}
+            
+            async with self.session.post(f"{BACKEND_URL}/add-to-continuity",
+                                       json=test_payload,
+                                       headers={"Content-Type": "application/json"}) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success"):
+                        self.log_result("Add to Continuity Database", True, 
+                                      "Character successfully added to continuity database", {
+                                          "character_id": character_data["id"],
+                                          "message": data.get("message", "")
+                                      })
+                    else:
+                        self.log_result("Add to Continuity Database", False, "Success flag not set", data)
+                else:
+                    error_text = await response.text()
+                    self.log_result("Add to Continuity Database", False, f"HTTP {response.status}", {"error": error_text})
+                    
+        except Exception as e:
+            self.log_result("Add to Continuity Database", False, f"Request error: {str(e)}")
+    
+    async def test_enhanced_style_analysis(self):
+        """Test enhanced style analysis at /api/analyze-style-enhanced - NEW PHASE 3A FEATURE"""
+        try:
+            # Test with clichéd text
+            cliche_test = {
+                "text": "The enigmatic character delved into the tapestry of emotions, meticulously examining the mysterious figure who was nestled in the shadows."
+            }
+            
+            async with self.session.post(f"{BACKEND_URL}/analyze-style-enhanced",
+                                       json=cliche_test,
+                                       headers={"Content-Type": "application/json"}) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "style_analysis" in data:
+                        analysis = data["style_analysis"]
+                        
+                        # Verify expected structure
+                        required_fields = ["overall_score", "readability_score", "engagement_score", 
+                                         "professionalism_score", "total_issues", "issues", 
+                                         "strengths", "improvement_summary", "educational_notes"]
+                        has_required = all(field in analysis for field in required_fields)
+                        
+                        # Verify issues structure with educational components
+                        issues = analysis.get("issues", [])
+                        valid_issues = all(
+                            all(field in issue for field in ["type", "severity", "title", "explanation",
+                                                           "problematic_text", "suggested_revision", 
+                                                           "reasoning", "examples", "learning_resources"])
+                            for issue in issues
+                        ) if issues else True
+                        
+                        # Should detect clichés in the test text
+                        has_cliche_issues = any(
+                            "cliche" in issue.get("type", "").lower() or
+                            any(cliche in issue.get("problematic_text", "").lower() 
+                                for cliche in ["enigmatic", "delved", "tapestry", "nestled", "meticulous"])
+                            for issue in issues
+                        )
+                        
+                        # Check for educational value
+                        has_reasoning = all(issue.get("reasoning") for issue in issues) if issues else True
+                        has_examples = all(issue.get("examples") for issue in issues) if issues else True
+                        has_learning_resources = all(issue.get("learning_resources") for issue in issues) if issues else True
+                        
+                        if has_required and valid_issues and has_cliche_issues:
+                            self.log_result("Enhanced Style Analysis (Clichés)", True, 
+                                          f"Detected {len(issues)} style issues with educational rationale", {
+                                              "total_issues": analysis["total_issues"],
+                                              "overall_score": round(analysis["overall_score"], 3),
+                                              "detected_cliches": has_cliche_issues,
+                                              "has_reasoning": has_reasoning,
+                                              "has_examples": has_examples,
+                                              "has_learning_resources": has_learning_resources,
+                                              "issue_types": [issue.get("type") for issue in issues]
+                                          })
+                        else:
+                            self.log_result("Enhanced Style Analysis (Clichés)", False, 
+                                          "Failed to detect clichés or missing educational components", {
+                                              "has_required_fields": has_required,
+                                              "valid_issues": valid_issues,
+                                              "detected_cliches": has_cliche_issues,
+                                              "issues_count": len(issues)
+                                          })
+                    else:
+                        self.log_result("Enhanced Style Analysis (Clichés)", False, "Invalid response format", data)
+                else:
+                    error_text = await response.text()
+                    self.log_result("Enhanced Style Analysis (Clichés)", False, f"HTTP {response.status}", {"error": error_text})
+            
+            # Test with passive voice
+            passive_test = {
+                "text": "The door was opened by the mysterious figure. The secret was discovered by the protagonist."
+            }
+            
+            async with self.session.post(f"{BACKEND_URL}/analyze-style-enhanced",
+                                       json=passive_test,
+                                       headers={"Content-Type": "application/json"}) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "style_analysis" in data:
+                        analysis = data["style_analysis"]
+                        issues = analysis.get("issues", [])
+                        
+                        # Should detect passive voice
+                        has_passive_issues = any(
+                            "passive" in issue.get("type", "").lower()
+                            for issue in issues
+                        )
+                        
+                        if has_passive_issues:
+                            self.log_result("Enhanced Style Analysis (Passive Voice)", True, 
+                                          "Detected passive voice issues with educational explanations", {
+                                              "total_issues": analysis["total_issues"],
+                                              "detected_passive_voice": has_passive_issues,
+                                              "issue_types": [issue.get("type") for issue in issues]
+                                          })
+                        else:
+                            self.log_result("Enhanced Style Analysis (Passive Voice)", False, 
+                                          "Failed to detect obvious passive voice", {
+                                              "expected": "passive voice detection",
+                                              "issues_found": len(issues),
+                                              "issue_types": [issue.get("type") for issue in issues]
+                                          })
+                    else:
+                        self.log_result("Enhanced Style Analysis (Passive Voice)", False, "Invalid response format", data)
+                else:
+                    error_text = await response.text()
+                    self.log_result("Enhanced Style Analysis (Passive Voice)", False, f"HTTP {response.status}", {"error": error_text})
+            
+            # Test with telling vs showing
+            telling_test = {
+                "text": "She was angry and felt nervous. He was a tall man who seemed mysterious."
+            }
+            
+            async with self.session.post(f"{BACKEND_URL}/analyze-style-enhanced",
+                                       json=telling_test,
+                                       headers={"Content-Type": "application/json"}) as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "style_analysis" in data:
+                        analysis = data["style_analysis"]
+                        issues = analysis.get("issues", [])
+                        
+                        # Should detect telling vs showing issues
+                        has_telling_issues = any(
+                            "telling" in issue.get("type", "").lower() or
+                            "showing" in issue.get("type", "").lower()
+                            for issue in issues
+                        )
+                        
+                        if has_telling_issues:
+                            self.log_result("Enhanced Style Analysis (Telling vs Showing)", True, 
+                                          "Detected telling vs showing issues with educational guidance", {
+                                              "total_issues": analysis["total_issues"],
+                                              "detected_telling_issues": has_telling_issues,
+                                              "issue_types": [issue.get("type") for issue in issues]
+                                          })
+                        else:
+                            self.log_result("Enhanced Style Analysis (Telling vs Showing)", False, 
+                                          "Failed to detect telling vs showing issues", {
+                                              "expected": "telling vs showing detection",
+                                              "issues_found": len(issues),
+                                              "issue_types": [issue.get("type") for issue in issues]
+                                          })
+                    else:
+                        self.log_result("Enhanced Style Analysis (Telling vs Showing)", False, "Invalid response format", data)
+                else:
+                    error_text = await response.text()
+                    self.log_result("Enhanced Style Analysis (Telling vs Showing)", False, f"HTTP {response.status}", {"error": error_text})
+                    
+        except Exception as e:
+            self.log_result("Enhanced Style Analysis", False, f"Request error: {str(e)}")
+    
+    async def test_style_coach_help(self):
+        """Test style coach help at /api/style-coach-help - NEW PHASE 3A FEATURE"""
+        try:
+            async with self.session.get(f"{BACKEND_URL}/style-coach-help") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if data.get("success") and "educational_resources" in data and "issue_types" in data:
+                        educational_resources = data["educational_resources"]
+                        issue_types = data["issue_types"]
+                        
+                        # Verify issue types structure
+                        expected_issue_types = [
+                            "cliche_language", "telling_not_showing", "passive_voice", 
+                            "weak_verbs", "filter_words", "ai_telltales"
+                        ]
+                        
+                        available_types = [issue_type.get("type") for issue_type in issue_types]
+                        types_match = all(expected_type in available_types for expected_type in expected_issue_types)
+                        
+                        # Verify issue type structure
+                        valid_structure = all(
+                            all(field in issue_type for field in ["type", "name", "description"])
+                            for issue_type in issue_types
+                        ) if issue_types else False
+                        
+                        if types_match and valid_structure and educational_resources:
+                            self.log_result("Style Coach Help", True, 
+                                          f"Educational resources and {len(issue_types)} issue types available", {
+                                              "issue_types_count": len(issue_types),
+                                              "available_types": available_types,
+                                              "has_educational_resources": bool(educational_resources),
+                                              "structure_valid": valid_structure
+                                          })
+                        else:
+                            self.log_result("Style Coach Help", False, 
+                                          "Missing expected issue types or invalid structure", {
+                                              "types_match": types_match,
+                                              "structure_valid": valid_structure,
+                                              "has_resources": bool(educational_resources),
+                                              "available_types": available_types
+                                          })
+                    else:
+                        self.log_result("Style Coach Help", False, "Invalid response format", data)
+                else:
+                    error_text = await response.text()
+                    self.log_result("Style Coach Help", False, f"HTTP {response.status}", {"error": error_text})
+                    
+        except Exception as e:
+            self.log_result("Style Coach Help", False, f"Request error: {str(e)}")
+
     async def run_all_tests(self):
         """Run all backend tests"""
-        print("🚀 Starting VisionForge Backend Tests - Advanced Power System Framework")
+        print("🚀 Starting VisionForge Backend Tests - Phase 3A Continuity Engine & Enhanced Style Coach")
         print(f"Testing against: {BACKEND_URL}")
         print("=" * 60)
         
@@ -779,10 +1128,17 @@ class VisionForgeBackendTester:
         await self.test_beat_sheet_generation()
         await self.test_trope_risk_analysis()
         
-        print("\n🔥 NEW ADVANCED POWER SYSTEM FRAMEWORK:")
-        # Run new Power System Framework tests
+        print("\n🔥 ADVANCED POWER SYSTEM FRAMEWORK:")
+        # Run Power System Framework tests
         await self.test_power_system_themes()
         await self.test_power_system_generation()
+        
+        print("\n🎯 NEW PHASE 3A FEATURES - CONTINUITY ENGINE & ENHANCED STYLE COACH:")
+        # Run new Phase 3A tests
+        await self.test_continuity_check()
+        await self.test_add_to_continuity()
+        await self.test_enhanced_style_analysis()
+        await self.test_style_coach_help()
         
         # Summary
         print("\n" + "=" * 60)
