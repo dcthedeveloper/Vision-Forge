@@ -295,11 +295,11 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated, aiSettings = { 
       <Card className="visionforge-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
-            <Upload className="w-5 h-5 text-indigo-400" />
-            Upload Character Image
+            <Eye className="w-5 h-5 text-indigo-400" />
+            Character Configuration
           </CardTitle>
           <CardDescription className="text-indigo-200">
-            Upload artwork and customize character parameters for detailed analysis
+            Customize analysis parameters - upload your character image below
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
