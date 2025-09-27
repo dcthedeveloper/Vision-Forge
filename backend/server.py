@@ -1101,6 +1101,8 @@ async def startup_event():
         logger.error(f"❌ Rule Engine initialization failed: {e}")
     
     logger.info("🚀 VisionForge enhanced systems ready!")
+
+@api_router.get("/analyses")
 async def get_character_analyses():
     """Get all character analyses"""
     try:
