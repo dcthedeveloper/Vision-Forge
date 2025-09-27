@@ -118,6 +118,7 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [showAdvanced, setShowAdvanced] = useState(true);
   const [ruleViolations, setRuleViolations] = useState([]);
+  const [opMode, setOpMode] = useState(false);
 
   const ADDITIONAL_TAGS = [
     "Anti-Hero", "Villain", "Morally Grey", "Reluctant Hero", "Team Leader",
