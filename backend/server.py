@@ -1296,12 +1296,22 @@ async def analyze_trope_risk_endpoint(request: dict):
         meter = get_trope_risk_meter()
         trope_profile = meter.analyze_character_tropes(character_data)
         
-        # Enhance suggestions using Ollama
-        enhanced_suggestions = await enhance_trope_suggestions_with_ollama(
-            trope_profile.improvement_suggestions,
-            trope_profile.trope_analyses,
-            character_data
-        )
+        # Enhance suggestions using Ollama (with fallback)
+        try:
+            enhanced_suggestions = await asyncio.wait_for(
+                enhance_trope_suggestions_with_ollama(
+                    trope_profile.improvement_suggestions,
+                    trope_profile.trope_analyses,
+                    character_data
+                ),
+                timeout=20.0  # 20 second total timeout for the enhancement
+            )
+        except asyncio.TimeoutError:
+            logger.warning("Trope suggestion enhancement timed out, using base suggestions")
+            enhanced_suggestions = trope_profile.improvement_suggestions
+        except Exception as e:
+            logger.warning(f"Enhancement failed, using base suggestions: {e}")
+            enhanced_suggestions = trope_profile.improvement_suggestions
         
         # Convert to dict for JSON response
         result = {
