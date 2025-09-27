@@ -1151,6 +1151,134 @@ async def get_rule_engine_status():
         logger.error(f"Rule engine status check failed: {e}")
         raise HTTPException(status_code=500, detail=f"Rule engine status failed: {str(e)}")
 
+# Beat Sheet Generator Endpoints
+@api_router.post("/generate-beat-sheet")
+async def generate_beat_sheet_endpoint(request: dict):
+    """Generate a beat sheet using Ollama for intelligent adaptation"""
+    try:
+        from beat_sheet_generator import get_beat_sheet_generator, BeatSheetType, TonePacing
+        
+        # Parse request parameters
+        sheet_type = BeatSheetType(request.get("sheet_type", "save_the_cat"))
+        tone_pacing = TonePacing(request.get("tone_pacing", "standard"))
+        story_length = int(request.get("story_length", 110))
+        character_data = request.get("character_data", {})
+        
+        # Generate base beat sheet
+        generator = get_beat_sheet_generator()
+        beat_sheet = generator.generate_beat_sheet(
+            sheet_type=sheet_type,
+            character_data=character_data,
+            tone_pacing=tone_pacing,
+            story_length=story_length
+        )
+        
+        # Use Ollama to enhance beat descriptions if character data provided
+        if character_data:
+            enhanced_beats = await enhance_beats_with_ollama(beat_sheet.beats, character_data)
+            beat_sheet.beats = enhanced_beats
+        
+        # Convert to dict for JSON response
+        result = {
+            "sheet_type": beat_sheet.sheet_type.value,
+            "title": beat_sheet.title,
+            "description": beat_sheet.description,
+            "total_beats": beat_sheet.total_beats,
+            "estimated_pages": beat_sheet.estimated_pages,
+            "tone_pacing": beat_sheet.tone_pacing.value,
+            "beats": [
+                {
+                    "beat_number": beat.beat_number,
+                    "beat_name": beat.beat_name,
+                    "description": beat.description,
+                    "page_range": beat.page_range,
+                    "percentage": beat.percentage,
+                    "tone_notes": beat.tone_notes,
+                    "character_focus": beat.character_focus,
+                    "plot_function": beat.plot_function,
+                    "marcus_style_adaptation": beat.marcus_style_adaptation
+                } for beat in beat_sheet.beats
+            ],
+            "character_integration_notes": beat_sheet.character_integration_notes,
+            "marcus_adaptations": beat_sheet.marcus_adaptations
+        }
+        
+        return {"beat_sheet": result, "success": True, "message": "Beat sheet generated successfully"}
+        
+    except Exception as e:
+        logger.error(f"Beat sheet generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Beat sheet generation failed: {str(e)}")
+
+@api_router.get("/beat-sheet-types")
+async def get_beat_sheet_types():
+    """Get available beat sheet types"""
+    from beat_sheet_generator import BeatSheetType, TonePacing
+    
+    return {
+        "sheet_types": [
+            {"value": "save_the_cat", "name": "Save the Cat (15 beats)", "description": "Blake Snyder's character-focused structure"},
+            {"value": "dan_harmon", "name": "Dan Harmon Story Circle", "description": "8-step circular story emphasizing character growth"},
+            {"value": "three_act", "name": "Three-Act Structure", "description": "Classic dramatic structure"},
+            {"value": "hero_journey", "name": "Hero's Journey", "description": "Campbell's monomyth structure"},
+            {"value": "kishōtenketsu", "name": "Kishōtenketsu", "description": "4-act Japanese narrative structure"}
+        ],
+        "tone_pacing": [
+            {"value": "slow_burn", "name": "Slow Burn", "description": "Extended setup, gradual escalation"},
+            {"value": "standard", "name": "Standard", "description": "Balanced pacing"},
+            {"value": "fast_paced", "name": "Fast Paced", "description": "Quick setup, rapid progression"},
+            {"value": "explosive", "name": "Explosive", "description": "Minimal setup, intense action"}
+        ]
+    }
+
+async def enhance_beats_with_ollama(beats, character_data: Dict) -> List:
+    """Use Ollama to enhance beat descriptions based on character data"""
+    try:
+        # Create character context for AI enhancement
+        character_context = f"""
+Character Context:
+- Origin: {character_data.get('character_origin', 'Unknown')}
+- Power Source: {character_data.get('power_source', 'Unknown')}
+- Traits: {', '.join([trait.get('trait', '') for trait in character_data.get('traits', [])])}
+- Backstory: {', '.join(character_data.get('backstory_seeds', []))}
+- Powers: {', '.join([power.get('name', '') for power in character_data.get('power_suggestions', [])])}
+"""
+        
+        enhanced_beats = []
+        for beat in beats:
+            # Create enhancement prompt for each beat
+            prompt = f"""Enhance this story beat description to fit the specific character provided. Keep the core structure but adapt the details to match the character's abilities, background, and personality.
+
+{character_context}
+
+Beat to enhance:
+Name: {beat.beat_name}
+Description: {beat.description}
+Character Focus: {beat.character_focus}
+Plot Function: {beat.plot_function}
+
+Provide an enhanced description that:
+1. Maintains the beat's structural purpose
+2. Integrates the character's specific traits and abilities
+3. Suggests concrete scenes or actions fitting this character
+4. Keeps the same tone and pacing
+
+Enhanced description:"""
+            
+            try:
+                enhanced_description = await ollama_text_generation(prompt, temperature=0.6)
+                beat.description = enhanced_description.strip()
+            except Exception as e:
+                logger.warning(f"Failed to enhance beat {beat.beat_number}: {e}")
+                # Keep original description if enhancement fails
+            
+            enhanced_beats.append(beat)
+        
+        return enhanced_beats
+        
+    except Exception as e:
+        logger.warning(f"Beat enhancement failed, returning original beats: {e}")
+        return beats
+
 # Initialize systems on startup
 @app.on_event("startup")
 async def startup_event():
