@@ -101,3 +101,85 @@
 #====================================================================================================
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
+
+user_problem_statement: "Integrate Ollama for all AI functionality within VisionForge. Replace existing emergentintegrations (OpenAI/Claude) setup with Ollama for local/self-hosted LLM integration while maintaining existing functionality and completing Phase 2 features (Beat-Sheet Generator, Enhanced Trope Risk Meter)."
+
+backend:
+  - task: "Ollama Integration Setup"
+    implemented: false
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Starting migration from emergentintegrations to Ollama. Current backend uses emergentintegrations with OpenAI GPT-4o and Claude Sonnet 4 models. Need to replace with local Ollama models while maintaining API compatibility."
+
+  - task: "Image-to-Lore Analyzer Ollama Migration"
+    implemented: false
+    working: "NA"
+    file: "server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Core feature currently uses multi-stage analysis with GPT-4o for vision and Claude Sonnet 4 for narrative. Need to replace with Ollama vision models (LLaVA) and text models."
+
+  - task: "Beat-Sheet Generator Implementation"
+    implemented: false
+    working: "NA"
+    file: "beat_sheet_generator.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Phase 2 feature - needs implementation with Ollama backend for narrative structure generation."
+
+  - task: "Enhanced Trope Risk Meter"
+    implemented: false
+    working: "NA"
+    file: "enhanced_trope_meter.py"
+    stuck_count: 0
+    priority: "medium"
+    needs_retesting: false
+    status_history:
+        - working: "NA"
+        - agent: "main"
+        - comment: "Phase 2 feature - real-time freshness scoring with Ollama integration."
+
+frontend:
+  - task: "UI Compatibility with Ollama Backend"
+    implemented: true
+    working: true
+    file: "ImageAnalyzer.js, TextGenerator.js, StyleCoach.js"
+    stuck_count: 0
+    priority: "low"
+    needs_retesting: true
+    status_history:
+        - working: true
+        - agent: "main"
+        - comment: "Frontend should remain compatible as we're maintaining API compatibility. May need testing to ensure seamless transition."
+
+metadata:
+  created_by: "main_agent"
+  version: "1.0"
+  test_sequence: 0
+  run_ui: false
+
+test_plan:
+  current_focus:
+    - "Ollama Integration Setup"
+    - "Image-to-Lore Analyzer Ollama Migration"
+  stuck_tasks: []
+  test_all: false
+  test_priority: "high_first"
+
+agent_communication:
+    - agent: "main"
+    - message: "Starting Ollama migration. Plan: 1) Install Ollama and Python client, 2) Replace emergentintegrations calls with Ollama, 3) Implement Phase 2 features, 4) Test all functionality. Current system uses emergentintegrations with EMERGENT_LLM_KEY for OpenAI/Claude access."
