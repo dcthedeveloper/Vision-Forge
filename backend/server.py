@@ -519,82 +519,210 @@ async def get_available_genres():
 async def analyze_image(
     file: UploadFile = File(...), 
     genre: str = "urban_realistic",
-    origin: str = "human",
-    social_status: str = "middle_class", 
-    power_source: str = "innate",
+    origin: str = "nootropic_enhanced",
+    social_status: str = "entrepreneurial", 
+    power_source: str = "nootropic_drug",
+    evolution_stage: str = "synergistic",
+    geographic_context: str = "detroit",
     tags: str = ""
 ):
-    """Upload and analyze image with comprehensive character parameters"""
+    """Upload and analyze image with Marcus-style sophisticated character parameters"""
     try:
         if not file.content_type.startswith('image/'):
             raise HTTPException(status_code=400, detail="File must be an image")
         
         image_data = await file.read()
         
-        # Simple character analysis that works
-        character_analysis = {
-            "id": str(uuid.uuid4()),
-            "image_name": file.filename,
-            "genre_universe": genre,
-            "character_origin": origin,
+        # Enhanced character context
+        character_context = {
+            "genre": genre,
+            "origin": origin,
             "social_status": social_status,
             "power_source": power_source,
-            "archetype_tags": tags.split(',') if tags else [],
-            "traits": [
-                {
-                    "category": "Physical", 
-                    "trait": f"Professional-looking {origin} with confident posture and expensive styling",
-                    "confidence": 0.9
-                },
-                {
-                    "category": "Professional",
-                    "trait": f"{social_status.replace('_', ' ')} background with business acumen and strategic thinking",
-                    "confidence": 0.8
-                },
-                {
-                    "category": "Psychological",
-                    "trait": f"Calculated risk-taker with {origin} abilities from {power_source}",
-                    "confidence": 0.7
-                }
-            ],
-            "mood": f"Confident and commanding presence fitting {genre.replace('_', ' ')} universe",
-            "backstory_seeds": [
-                f"A {origin} who gained abilities through {power_source} and built a business empire",
-                f"Someone from {social_status.replace('_', ' ')} background who uses their position for heroic/anti-heroic purposes",
-                f"Complex character balancing public success with secret {origin} identity"
-            ],
-            "power_suggestions": [
-                {
-                    "name": "Enhanced Cognition",
-                    "description": f"Superior mental processing from {power_source}, allowing rapid analysis and strategic planning",
-                    "limitations": "Mental strain from extended use, requires rest periods",
-                    "cost_level": 6
-                },
-                {
-                    "name": "Social Influence",
-                    "description": f"Natural charisma enhanced by {origin} nature, commanding respect and loyalty",
-                    "limitations": "Effectiveness varies by individual, doesn't work on strong-willed opponents",
-                    "cost_level": 4
-                }
-            ],
-            "persona_summary": f"A sophisticated {origin} from {social_status.replace('_', ' ')} background who operates in the {genre.replace('_', ' ')} universe. Their abilities, derived from {power_source}, complement their business acumen and strategic mind, making them a formidable presence whether as hero or anti-hero.",
-            "created_at": datetime.utcnow().isoformat()
+            "evolution_stage": evolution_stage,
+            "geographic_context": geographic_context,
+            "tags": tags.split(',') if tags else []
         }
         
-        # Store in database (simple dict format)
+        # Generate Marcus-style sophisticated character analysis
+        character_analysis = await create_sophisticated_character_analysis(
+            image_data, file.filename, character_context
+        )
+        
+        # Store in database
         await db.character_analyses.insert_one(character_analysis.copy())
         
         return {
             "analysis": character_analysis,
             "success": True,
-            "message": f"Character analysis completed for {origin} in {genre} universe"
+            "message": f"Sophisticated {origin} character created for {geographic_context}"
         }
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Analysis failed: {e}")
+        logger.error(f"Sophisticated analysis failed: {e}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+
+async def create_sophisticated_character_analysis(image_data: bytes, filename: str, context: Dict) -> Dict[str, Any]:
+    """Create Marcus-style sophisticated character analysis"""
+    try:
+        # Get origin and power source descriptions
+        origin_info = ENHANCED_CHARACTER_ORIGINS.get(context["origin"], {})
+        power_info = ENHANCED_POWER_SOURCES.get(context["power_source"], {})
+        location_info = GEOGRAPHIC_CONTEXTS.get(context["geographic_context"], "Urban setting")
+        
+        # Generate sophisticated character profile
+        character_id = str(uuid.uuid4())
+        
+        # Marcus-style traits based on nootropic enhancement
+        if context["power_source"] == "nootropic_drug":
+            traits = [
+                {
+                    "category": "Cognitive", 
+                    "trait": f"Hypercognitive processing from {power_info.get('name', 'experimental enhancement')} - rapid pattern recognition, strategic foresight, and perfect recall",
+                    "confidence": 0.95
+                },
+                {
+                    "category": "Physical",
+                    "trait": f"Mind-body synergy optimization - enhanced coordination, stress resistance, and metabolic efficiency from neural enhancement",
+                    "confidence": 0.9
+                },
+                {
+                    "category": "Professional",
+                    "trait": f"Elite {context['social_status'].replace('_', ' ')} operating in {location_info} - leveraging cognitive advantage for systematic empire building",
+                    "confidence": 0.85
+                },
+                {
+                    "category": "Psychological",
+                    "trait": f"Strategic mastermind with {context['evolution_stage'].replace('_', ' ')} consciousness - calculates 15-20 moves ahead in any scenario",
+                    "confidence": 0.8
+                }
+            ]
+            
+            power_suggestions = [
+                {
+                    "name": "Hypercognitive Processing",
+                    "description": f"Brain operates at peak efficiency from {power_info.get('name', 'enhancement')} - processes information 50x faster than baseline human, sees patterns others miss",
+                    "limitations": "Requires 6-8 hours downtime every 48 hours, extreme mental fatigue if overused, needs specific nutritional support",
+                    "cost_level": 8
+                },
+                {
+                    "name": "Synaptic Network Mapping", 
+                    "description": "Instantly analyzes social dynamics, organizational structures, and system vulnerabilities - like seeing the Matrix of human behavior",
+                    "limitations": "Less effective with truly chaotic/random systems, can be overwhelmed by too many variables simultaneously",
+                    "cost_level": 7
+                },
+                {
+                    "name": "Accelerated Learning Integration",
+                    "description": "Absorbs new skills, languages, and knowledge domains in days rather than years - true polymath capability",
+                    "limitations": "Information must be actively maintained or it fades, can't learn purely physical skills without practice",
+                    "cost_level": 6
+                },
+                {
+                    "name": "Predictive Modeling Consciousness",
+                    "description": "Subconscious mind runs constant predictive models of future scenarios based on current data patterns",
+                    "limitations": "Predictions become less accurate beyond 6-month timeframes, requires constant data input to remain accurate",
+                    "cost_level": 9
+                }
+            ]
+            
+            backstory_seeds = [
+                f"Started as ambitious {context['social_status'].replace('_', ' ')} in {location_info} who discovered experimental nootropic during corporate merger - what began as edge in negotiations became permanent cognitive evolution",
+                f"Gained access to prototype meta-drug through underground biotechnology network - used initial enhancement to systematically acquire more doses and optimize formula",
+                f"Former street-smart entrepreneur who participated in 'volunteer' pharmaceutical trial - transformed cognitive enhancement into tool for rebuilding {location_info}'s power structures",
+                f"Self-made individual who reverse-engineered cognitive enhancement technology - now operates network providing 'consultation services' to elite while building shadow empire"
+            ]
+            
+        else:
+            # Fallback for other power sources
+            traits = [
+                {
+                    "category": "Physical",
+                    "trait": f"Enhanced {origin_info.get('name', 'individual')} with commanding presence",
+                    "confidence": 0.8
+                },
+                {
+                    "category": "Professional", 
+                    "trait": f"{context['social_status'].replace('_', ' ')} background with {context['evolution_stage'].replace('_', ' ')} abilities",
+                    "confidence": 0.7
+                }
+            ]
+            
+            power_suggestions = [
+                {
+                    "name": f"Enhanced {origin_info.get('name', 'Abilities')}",
+                    "description": f"Abilities from {power_info.get('name', 'unknown source')}",
+                    "limitations": "Standard limitations apply",
+                    "cost_level": 5
+                }
+            ]
+            
+            backstory_seeds = [
+                f"A {origin_info.get('name', 'character')} with {power_info.get('name', 'abilities')} operating in {location_info}"
+            ]
+        
+        character_analysis = {
+            "id": character_id,
+            "image_name": filename,
+            "genre_universe": context["genre"],
+            "character_origin": context["origin"],
+            "social_status": context["social_status"],
+            "power_source": context["power_source"],
+            "evolution_stage": context["evolution_stage"],
+            "geographic_context": context["geographic_context"],
+            "archetype_tags": context["tags"],
+            "traits": traits,
+            "mood": f"Calculated confidence with underlying tension - the weight of operating 15 moves ahead in {location_info}'s complex power dynamics",
+            "backstory_seeds": backstory_seeds,
+            "power_suggestions": power_suggestions,
+            "persona_summary": f"A sophisticated {origin_info.get('name', 'individual')} who transformed {context['social_status'].replace('_', ' ')} background through {power_info.get('name', 'enhancement')} into systematic advantage. Operating from {location_info}, they've learned to navigate complex power structures while building their own empire through strategic thinking and calculated risk-taking. Their {context['evolution_stage'].replace('_', ' ')} represents the pinnacle of human potential enhanced by cutting-edge enhancement.",
+            "created_at": datetime.utcnow().isoformat()
+        }
+        
+        return character_analysis
+        
+    except Exception as e:
+        logger.error(f"Sophisticated analysis creation failed: {e}")
+        return await create_simple_fallback_analysis(filename, context)
+
+async def create_simple_fallback_analysis(filename: str, context: Dict) -> Dict[str, Any]:
+    """Fallback analysis if sophisticated version fails"""
+    return {
+        "id": str(uuid.uuid4()),
+        "image_name": filename,
+        "traits": [{"category": "Analysis", "trait": "Character analysis in progress", "confidence": 0.5}],
+        "mood": f"Character from {context.get('geographic_context', 'unknown location')}",
+        "backstory_seeds": [f"A {context.get('origin', 'character')} with {context.get('power_source', 'abilities')}"],
+        "power_suggestions": [{"name": "Enhanced Abilities", "description": "Powers in development", "limitations": "Analysis incomplete", "cost_level": 5}],
+        "persona_summary": "Character analysis requires additional processing",
+        "created_at": datetime.utcnow().isoformat()
+    }
+
+# Enhanced definitions for backend
+ENHANCED_CHARACTER_ORIGINS = {
+    "nootropic_enhanced": {"name": "Nootropic Enhanced", "description": "Cognitive enhancement through experimental smart drugs"},
+    "biotech_subject": {"name": "Biotech Subject", "description": "Enhanced through cutting-edge biotechnology"},
+    "self_optimized": {"name": "Self-Optimized", "description": "Achieved enhancement through systematic self-improvement"},
+    "metahuman": {"name": "Metahuman", "description": "Human with acquired supernatural abilities"},
+    "enhanced_human": {"name": "Enhanced Human", "description": "Human with augmented abilities"}
+}
+
+ENHANCED_POWER_SOURCES = {
+    "nootropic_drug": {"name": "Experimental Nootropic Drug", "description": "NZT-48 style cognitive enhancement"},
+    "meta_drug": {"name": "Meta-Enhancement Drug", "description": "Advanced biochemical enhancement"},
+    "neural_enhancement": {"name": "Neural Network Optimization", "description": "Direct brain enhancement"},
+    "self_evolution": {"name": "Conscious Self-Evolution", "description": "Systematic self-improvement"},
+    "biotech_implant": {"name": "Biotech Implantation", "description": "Integrated biotechnology"}
+}
+
+GEOGRAPHIC_CONTEXTS = {
+    "detroit": "Detroit - Industrial Rebirth Hub",
+    "chicago": "Chicago - Urban Power Center", 
+    "new_york": "New York - Financial Capital",
+    "miami": "Miami - International Gateway",
+    "multi_city": "Multi-City Operations Network"
+}
 
 async def get_enhanced_character_analysis(image_data: bytes, filename: str, context: Dict) -> Dict[str, Any]:
     """Enhanced character analysis with comprehensive parameters"""
