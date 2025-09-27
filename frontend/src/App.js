@@ -41,7 +41,7 @@ function App() {
 
               <div className="max-w-7xl mx-auto">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-7 mb-8">
+                  <TabsList className="grid w-full grid-cols-8 mb-8">
                     <TabsTrigger value="image-analyzer" className="text-sm py-3">
                       Image Analyzer
                     </TabsTrigger>
@@ -59,6 +59,9 @@ function App() {
                     </TabsTrigger>
                     <TabsTrigger value="trope-meter" className="text-sm py-3">
                       Trope Meter
+                    </TabsTrigger>
+                    <TabsTrigger value="settings" className="text-sm py-3">
+                      AI Settings
                     </TabsTrigger>
                     <TabsTrigger value="history" className="text-sm py-3">
                       History
