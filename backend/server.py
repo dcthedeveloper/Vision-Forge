@@ -6,7 +6,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 import base64
-import io
 import tempfile
 from pathlib import Path
 from pydantic import BaseModel, Field
@@ -25,7 +24,7 @@ client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
 # Create the main app without a prefix
-app = FastAPI(title="VisionForge API", description="Image-to-Lore Analysis System")
+app = FastAPI(title="VisionForge API", description="Integrated Character Creation System")
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")
@@ -41,174 +40,306 @@ class PowerSuggestion(BaseModel):
     name: str
     description: str
     limitations: str
-    cost_level: int  # 1-10 scale
+    cost_level: int
 
-class CharacterAnalysis(BaseModel):
+class CharacterProfile(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    image_name: str
-    traits: List[CharacterTrait]
-    mood: str
-    backstory_seeds: List[str]
-    power_suggestions: List[PowerSuggestion]
-    persona_summary: str
+    name: Optional[str] = None
+    image_name: Optional[str] = None
+    genre_universe: Optional[str] = None
+    traits: List[CharacterTrait] = []
+    mood: Optional[str] = None
+    backstory_seeds: List[str] = []
+    power_suggestions: List[PowerSuggestion] = []
+    persona_summary: Optional[str] = None
+    expanded_backstory: Optional[str] = None
+    dialogue_samples: List[str] = []
+    style_notes: Optional[Dict[str, Any]] = None
+    trope_analysis: Optional[Dict[str, Any]] = None
+    creation_stages: List[str] = []
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
-class CharacterAnalysisResponse(BaseModel):
-    analysis: CharacterAnalysis
-    success: bool
-    message: str
+class GenreAnalysisRequest(BaseModel):
+    character_id: str
+    genre_universe: str
+    analysis_focus: str  # "powers", "backstory", "personality", "all"
 
-class TextGenerationRequest(BaseModel):
-    prompt: str
-    generation_type: str  # "character", "story", "backstory", "dialogue"
+class CharacterEnhancementRequest(BaseModel):
+    character_id: str
+    enhancement_type: str  # "expand_backstory", "add_dialogue", "refine_powers"
+    prompt: Optional[str] = None
     style_preferences: Optional[Dict[str, Any]] = None
 
-class TextGenerationResponse(BaseModel):
-    generated_text: str
-    style_analysis: Optional[Dict[str, Any]] = None
-    suggestions: List[str] = []
-    cliche_score: Optional[float] = None
-    success: bool
-    message: str
-
-class StyleAnalysisRequest(BaseModel):
-    text: str
-
-class StyleAnalysisResponse(BaseModel):
-    cliche_score: float
-    issues: List[Dict[str, str]]
+class IntegratedAnalysisResponse(BaseModel):
+    character: CharacterProfile
     suggestions: List[str]
-    rewritten_text: str
+    next_steps: List[str]
     success: bool
     message: str
 
-
-# LLM Integration Setup
-async def get_multi_stage_analysis(image_data: bytes, image_filename: str) -> Dict[str, Any]:
-    """Multi-stage analysis for higher quality character creation"""
-    try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
-        
-        # Convert image to base64
-        image_b64 = base64.b64encode(image_data).decode('utf-8')
-        image_content = ImageContent(image_base64=image_b64)
-        
-        # Stage 1: Visual Extraction
-        stage1_chat = LlmChat(
-            api_key=os.environ['EMERGENT_LLM_KEY'],
-            session_id=f"stage1-{uuid.uuid4()}",
-            system_message="""You are a visual analyst. Extract only what you can directly observe:
-
-Return JSON:
-{
-  "appearance": "Physical description - build, height, features",
-  "clothing": "Detailed clothing and accessories description", 
-  "setting": "Environment and location details",
-  "pose_expression": "Body language and facial expression",
-  "style_aesthetic": "Overall visual style (modern, vintage, etc.)"
-}
-
-Be precise and observational only. No speculation about personality or powers."""
-        ).with_model("openai", "gpt-4o")
-        
-        stage1_message = UserMessage(
-            text="Analyze this image and extract only the visual details you can directly observe.",
-            file_contents=[image_content]
-        )
-        
-        stage1_response = await stage1_chat.send_message(stage1_message)
-        
-        # Parse Stage 1
-        stage1_data = await parse_json_response(str(stage1_response))
-        
-        # Stage 2: Cultural Context & World Building
-        stage2_chat = LlmChat(
-            api_key=os.environ['EMERGENT_LLM_KEY'], 
-            session_id=f"stage2-{uuid.uuid4()}",
-            system_message="""You are a world-building expert. Based on visual details, determine the character's world and cultural context.
-
-Focus on:
-- What real-world culture/location does this suggest?
-- What profession or lifestyle fits this appearance?
-- What kind of story world does this belong in? (urban drama, corporate thriller, etc.)
-- What social/economic status is indicated?
-
-Return JSON:
-{
-  "cultural_context": "Specific cultural/geographic context",
-  "profession_lifestyle": "Likely profession or lifestyle",
-  "story_world": "Genre and setting type",
-  "social_status": "Economic and social indicators",
-  "realistic_backstory_seeds": ["grounded backstory idea 1", "idea 2", "idea 3"]
-}
-
-Avoid fantasy tropes. Think realistic modern settings."""
-        ).with_model("anthropic", "claude-sonnet-4-20250514")
-        
-        stage2_message = UserMessage(
-            text=f"Based on these visual details, determine the cultural context and world: {stage1_data}"
-        )
-        
-        stage2_response = await stage2_chat.send_message(stage2_message)
-        stage2_data = await parse_json_response(str(stage2_response))
-        
-        # Stage 3: Grounded Character Creation
-        stage3_chat = LlmChat(
-            api_key=os.environ['EMERGENT_LLM_KEY'],
-            session_id=f"stage3-{uuid.uuid4()}",
-            system_message="""You are a character design expert who creates realistic, non-clichéd characters.
-
-Create abilities that fit the real world context. Examples of GOOD vs BAD:
-- BAD: "Shadow Manipulation", "Urban Kinesis", "Energy Control"  
-- GOOD: "Hypercognitive", "Pattern Recognition", "Social Engineering"
-
-Use clinical/realistic terminology. Powers should feel like enhanced human abilities, not fantasy magic.
-
-Return JSON:
-{
-  "traits": [
-    {"category": "Physical", "trait": "description", "confidence": 0.9},
-    {"category": "Professional", "trait": "career/skill description", "confidence": 0.8},
-    {"category": "Psychological", "trait": "mental/emotional traits", "confidence": 0.7}
-  ],
-  "mood": "sophisticated emotional description",
-  "realistic_abilities": [
-    {
-      "name": "Clinical ability name (like Hypercognitive)",
-      "description": "Realistic human enhancement",
-      "limitations": "Real-world constraints",
-      "cost_level": 5
+# Genre/Universe definitions
+GENRES = {
+    "dc_comics": {
+        "name": "DC Comics",
+        "power_style": "Epic, mythological abilities with clear moral implications",
+        "character_archetypes": "Heroes with strong moral codes, complex villains, gods among mortals",
+        "tone": "Hopeful idealism mixed with dark complexity"
+    },
+    "marvel_comics": {
+        "name": "Marvel Comics", 
+        "power_style": "Science-based abilities with personal costs and relatable limitations",
+        "character_archetypes": "Flawed heroes, relatable problems, powers as metaphors for real issues",
+        "tone": "Relatable humanity with extraordinary circumstances"
+    },
+    "anime_manga": {
+        "name": "Anime/Manga",
+        "power_style": "Unique power systems with training progression and emotional connections",
+        "character_archetypes": "Determined protagonists, complex rivals, powers tied to emotions or philosophy",
+        "tone": "Emotional intensity with philosophical depth"
+    },
+    "manhwa": {
+        "name": "Manhwa",
+        "power_style": "Systematic power growth, often game-like or cultivation-based",
+        "character_archetypes": "Strategic protagonists, clear power hierarchies, revenge/redemption arcs",
+        "tone": "Strategic thinking with emotional catharsis"
+    },
+    "image_comics": {
+        "name": "Image Comics",
+        "power_style": "Innovative, often disturbing abilities with serious consequences",
+        "character_archetypes": "Anti-heroes, morally grey protagonists, deconstructed superhero tropes",
+        "tone": "Mature themes with creative storytelling"
+    },
+    "milestone": {
+        "name": "Milestone Comics",
+        "power_style": "Culturally grounded abilities reflecting community and identity",
+        "character_archetypes": "Diverse heroes dealing with real social issues, community-focused stories",
+        "tone": "Social consciousness with superheroic action"
+    },
+    "wildstorm": {
+        "name": "Wildstorm",
+        "power_style": "Military-tech enhanced abilities, often cybernetic or bio-mechanical",
+        "character_archetypes": "Soldier-heroes, corporate conspiracies, tech-enhanced operatives",
+        "tone": "Gritty action with conspiracy elements"
+    },
+    "urban_realistic": {
+        "name": "Urban Realistic",
+        "power_style": "Subtle enhancements that could theoretically exist, grounded limitations",
+        "character_archetypes": "Street-level heroes, crime drama protagonists, enhanced humans",
+        "tone": "Gritty realism with minimal fantastical elements"
     }
+}
+
+
+async def get_genre_adapted_analysis(visual_data: Dict, genre: str, character_context: Optional[Dict] = None) -> Dict[str, Any]:
+    """Adapt character analysis based on chosen genre/universe"""
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        
+        genre_info = GENRES.get(genre, GENRES["urban_realistic"])
+        
+        system_prompt = f"""You are a {genre_info['name']} character expert. Adapt this character analysis to fit the {genre_info['name']} universe.
+
+GENRE CONTEXT:
+- Power Style: {genre_info['power_style']}
+- Character Types: {genre_info['character_archetypes']}
+- Tone: {genre_info['tone']}
+
+Based on the visual analysis, create powers and backstory that would fit naturally in {genre_info['name']}.
+
+Return JSON:
+{{
+  "genre_adapted_powers": [
+    {{
+      "name": "Power name fitting {genre_info['name']} style",
+      "description": "How it works in this universe",
+      "limitations": "Genre-appropriate limitations", 
+      "cost_level": 5,
+      "universe_context": "How this fits the {genre_info['name']} world"
+    }}
   ],
-  "persona_summary": "Complex character description avoiding clichés"
-}"""
+  "genre_backstory_elements": [
+    "Backstory element 1 fitting {genre_info['name']}",
+    "Element 2", "Element 3"
+  ],
+  "character_role": "What role this character would play in {genre_info['name']}",
+  "universe_connections": "How they might connect to existing {genre_info['name']} lore"
+}}
+
+Make it feel authentic to {genre_info['name']} while respecting the character's visual appearance."""
+        
+        chat = LlmChat(
+            api_key=os.environ['EMERGENT_LLM_KEY'],
+            session_id=f"genre-adapt-{uuid.uuid4()}",
+            system_message=system_prompt
         ).with_model("anthropic", "claude-sonnet-4-20250514")
         
-        combined_context = f"Visual: {stage1_data}\nContext: {stage2_data}"
-        stage3_message = UserMessage(
-            text=f"Create a realistic character based on: {combined_context}"
+        context_text = f"Visual Analysis: {visual_data}"
+        if character_context:
+            context_text += f"\nExisting Character Context: {character_context}"
+            
+        message = UserMessage(
+            text=f"Adapt this character for {genre_info['name']}: {context_text}"
         )
         
-        stage3_response = await stage3_chat.send_message(stage3_message)
-        stage3_data = await parse_json_response(str(stage3_response))
-        
-        # Combine all stages
-        final_result = {
-            "traits": stage3_data.get("traits", []),
-            "mood": stage3_data.get("mood", "Unknown"),
-            "backstory_seeds": stage2_data.get("realistic_backstory_seeds", []),
-            "power_suggestions": stage3_data.get("realistic_abilities", []),
-            "persona_summary": stage3_data.get("persona_summary", ""),
-            "analysis_quality": "multi_stage",
-            "cultural_context": stage2_data.get("cultural_context", "")
-        }
-        
-        return final_result
+        response = await chat.send_message(message)
+        return await parse_json_response(str(response))
         
     except Exception as e:
-        logger.error(f"Multi-stage analysis failed: {e}")
-        # Fallback to single stage
-        return await get_vision_analysis(image_data, image_filename)
+        logger.error(f"Genre adaptation failed: {e}")
+        return {}
+
+async def enhance_character_with_tools(character_id: str, enhancement_type: str, prompt: Optional[str] = None) -> Dict[str, Any]:
+    """Use other VisionForge tools to enhance the character"""
+    try:
+        # Get existing character
+        character_doc = await db.character_profiles.find_one({"id": character_id})
+        if not character_doc:
+            raise HTTPException(status_code=404, detail="Character not found")
+        
+        character = CharacterProfile(**character_doc)
+        
+        if enhancement_type == "expand_backstory":
+            return await expand_character_backstory(character, prompt)
+        elif enhancement_type == "add_dialogue":
+            return await generate_character_dialogue(character, prompt)
+        elif enhancement_type == "style_analysis":
+            return await analyze_character_style(character)
+        elif enhancement_type == "trope_analysis":
+            return await analyze_character_tropes(character)
+        else:
+            return {"error": "Unknown enhancement type"}
+            
+    except Exception as e:
+        logger.error(f"Character enhancement failed: {e}")
+        return {"error": str(e)}
+
+async def expand_character_backstory(character: CharacterProfile, focus_prompt: Optional[str] = None) -> Dict[str, Any]:
+    """Use Text Generator to expand character backstory"""
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        
+        genre_context = ""
+        if character.genre_universe:
+            genre_info = GENRES.get(character.genre_universe, {})
+            genre_context = f"This character exists in the {genre_info.get('name', 'generic')} universe with tone: {genre_info.get('tone', 'realistic')}"
+        
+        prompt = f"""Character Profile:
+- Persona: {character.persona_summary}
+- Traits: {[t.trait for t in character.traits]}
+- Powers: {[p.name + ': ' + p.description for p in character.power_suggestions]}
+- Backstory Seeds: {character.backstory_seeds}
+{genre_context}
+
+Focus: {focus_prompt or 'Expand the character backstory with depth and complexity'}
+
+Create a detailed backstory that builds on these elements without contradicting them. Make it rich, complex, and authentic to the character's visual presentation and chosen universe."""
+        
+        chat = LlmChat(
+            api_key=os.environ['EMERGENT_LLM_KEY'],
+            session_id=f"backstory-{uuid.uuid4()}",
+            system_message="You are VisionForge's Backstory Architect. Create rich, complex character histories that feel lived-in and authentic."
+        ).with_model("anthropic", "claude-sonnet-4-20250514")
+        
+        response = await chat.send_message(UserMessage(text=prompt))
+        
+        return {"expanded_backstory": str(response), "enhancement_type": "backstory"}
+        
+    except Exception as e:
+        logger.error(f"Backstory expansion failed: {e}")
+        return {"error": str(e)}
+
+async def generate_character_dialogue(character: CharacterProfile, scenario: Optional[str] = None) -> Dict[str, Any]:
+    """Generate dialogue samples for the character"""
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        
+        prompt = f"""Character: {character.persona_summary}
+Traits: {[t.trait for t in character.traits]}
+Backstory Context: {character.expanded_backstory or 'Basic backstory from seeds'}
+
+Scenario: {scenario or 'General conversation samples showing personality'}
+
+Write 3-4 dialogue samples that demonstrate this character's unique voice, speech patterns, and personality. Each should be 2-3 lines showing how they speak in different situations (casual, tense, professional, etc.)."""
+
+        chat = LlmChat(
+            api_key=os.environ['EMERGENT_LLM_KEY'],
+            session_id=f"dialogue-{uuid.uuid4()}",
+            system_message="You are VisionForge's Dialogue Specialist. Write authentic character-specific speech patterns."
+        ).with_model("anthropic", "claude-sonnet-4-20250514")
+        
+        response = await chat.send_message(UserMessage(text=prompt))
+        
+        # Parse dialogue samples from response
+        dialogue_text = str(response)
+        dialogue_samples = [line.strip() for line in dialogue_text.split('\n') if line.strip() and not line.startswith('#')]
+        
+        return {"dialogue_samples": dialogue_samples[:4], "enhancement_type": "dialogue"}
+        
+    except Exception as e:
+        logger.error(f"Dialogue generation failed: {e}")
+        return {"error": str(e)}
+
+async def analyze_character_style(character: CharacterProfile) -> Dict[str, Any]:
+    """Analyze character for style issues and clichés"""
+    try:
+        # Combine character text for analysis
+        combined_text = f"{character.persona_summary}\n{character.expanded_backstory or ''}"
+        combined_text += "\n".join([p.description for p in character.power_suggestions])
+        
+        if not combined_text.strip():
+            return {"error": "No text content to analyze"}
+        
+        return await analyze_writing_style(combined_text)
+        
+    except Exception as e:
+        logger.error(f"Style analysis failed: {e}")
+        return {"error": str(e)}
+
+async def analyze_character_tropes(character: CharacterProfile) -> Dict[str, Any]:
+    """Analyze character for trope usage and suggest subversions"""
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        
+        prompt = f"""Analyze this character for trope usage and originality:
+
+Character: {character.persona_summary}
+Powers: {[p.name + ': ' + p.description for p in character.power_suggestions]}
+Backstory: {character.expanded_backstory or 'Basic concept from initial analysis'}
+
+Identify:
+1. What tropes or archetypes this character uses
+2. How clichéd or original each element is (1-10 scale)
+3. Specific suggestions to subvert or enhance these tropes
+4. What makes this character unique vs generic
+
+Return JSON:
+{{
+  "identified_tropes": [
+    {{"trope": "trope name", "cliche_level": 7, "usage": "how character uses this trope"}}
+  ],
+  "originality_score": 6.5,
+  "subversion_suggestions": [
+    "Specific suggestion 1", "Suggestion 2"
+  ],
+  "unique_elements": ["What makes this character stand out"],
+  "improvement_areas": ["Areas that could be more original"]
+}}"""
+        
+        chat = LlmChat(
+            api_key=os.environ['EMERGENT_LLM_KEY'],
+            session_id=f"trope-analysis-{uuid.uuid4()}",
+            system_message="You are VisionForge's Trope Analyst. Identify clichés and suggest creative subversions."
+        ).with_model("anthropic", "claude-sonnet-4-20250514")
+        
+        response = await chat.send_message(UserMessage(text=prompt))
+        analysis = await parse_json_response(str(response))
+        
+        return {"trope_analysis": analysis, "enhancement_type": "trope_analysis"}
+        
+    except Exception as e:
+        logger.error(f"Trope analysis failed: {e}")
+        return {"error": str(e)}
 
 async def parse_json_response(response_text: str) -> Dict[str, Any]:
     """Helper to parse JSON from AI responses"""
@@ -228,182 +359,116 @@ async def parse_json_response(response_text: str) -> Dict[str, Any]:
     except:
         return {}
 
-async def get_vision_analysis(image_data: bytes, image_filename: str) -> Dict[str, Any]:
-    """Get vision analysis from OpenAI GPT-4o with vision"""
+async def get_multi_stage_analysis(image_data: bytes, image_filename: str, genre: Optional[str] = None) -> Dict[str, Any]:
+    """Multi-stage analysis adapted for genre/universe"""
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage, FileContentWithMimeType
+        from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
         
-        # Initialize chat with vision capabilities
-        chat = LlmChat(
-            api_key=os.environ['EMERGENT_LLM_KEY'],
-            session_id=f"vision-analysis-{uuid.uuid4()}",
-            system_message="""You are VisionForge, an expert character analyst specializing in extracting deep lore from images.
-
-Analyze the provided image and return a detailed JSON response with this exact structure:
-{
-  "traits": [
-    {"category": "Physical", "trait": "specific physical description", "confidence": 0.9},
-    {"category": "Clothing", "trait": "detailed clothing/style description", "confidence": 0.8},
-    {"category": "Personality", "trait": "personality inference from pose/expression", "confidence": 0.7},
-    {"category": "Environment", "trait": "setting and atmosphere description", "confidence": 0.8}
-  ],
-  "mood": "overall emotional tone and atmosphere of the character/scene",
-  "backstory_seeds": [
-    "Creative backstory possibility 1 based on visual cues",
-    "Creative backstory possibility 2 based on visual cues", 
-    "Creative backstory possibility 3 based on visual cues"
-  ],
-  "power_suggestions": [
-    {
-      "name": "Power Name based on character appearance",
-      "description": "What the power does, inspired by visual elements",
-      "limitations": "Realistic constraints and costs",
-      "cost_level": 5
-    },
-    {
-      "name": "Second Power Name",
-      "description": "Another ability suggestion",
-      "limitations": "Different type of limitation",
-      "cost_level": 3
-    }
-  ],
-  "persona_summary": "2-3 sentence character summary avoiding clichés, based on actual visual details"
-}
-
-Be specific and detailed. Focus on what you actually see in the image - clothing, posture, setting, expression, style. 
-
-For power suggestions, consider the character's actual appearance and context:
-- Business/professional characters: social influence, strategic thinking, network access
-- Military/tactical characters: tactical awareness, leadership, quick decision-making  
-- Artist/creative characters: inspiration, pattern recognition, emotional influence
-- Street/urban characters: survival instincts, street knowledge, adaptability
-
-Avoid generic fantasy/superhero power names like "Shadow Control", "Element Manipulation", or anything ending in "-kinesis". Think more grounded and realistic abilities that fit the character's world and appearance."""
-        )
-        
-        chat = chat.with_model("openai", "gpt-4o")
-        
-        # Convert image to base64 for OpenAI vision
-        from emergentintegrations.llm.chat import ImageContent
         image_b64 = base64.b64encode(image_data).decode('utf-8')
-        
         image_content = ImageContent(image_base64=image_b64)
         
-        # Create message with image
-        user_message = UserMessage(
-            text="Analyze this character image for detailed traits, mood, backstory seeds, and power suggestions. Focus on what you actually see - their appearance, clothing, setting, and pose. Return the response in the exact JSON format specified.",
+        # Stage 1: Visual Extraction (unchanged)
+        stage1_chat = LlmChat(
+            api_key=os.environ['EMERGENT_LLM_KEY'],
+            session_id=f"stage1-{uuid.uuid4()}",
+            system_message="""Extract visual details only. No speculation about personality or powers.
+            
+Return JSON:
+{
+  "appearance": "Physical description",
+  "clothing": "Detailed clothing description", 
+  "setting": "Environment details",
+  "pose_expression": "Body language and expression",
+  "style_aesthetic": "Overall visual style"
+}"""
+        ).with_model("openai", "gpt-4o")
+        
+        stage1_response = await stage1_chat.send_message(UserMessage(
+            text="Extract visual details from this image.",
             file_contents=[image_content]
-        )
+        ))
         
-        response = await chat.send_message(user_message)
+        stage1_data = await parse_json_response(str(stage1_response))
         
-        # Parse JSON response
-        import json
-        try:
-            # Extract JSON from response
-            response_text = str(response)
-            if "```json" in response_text:
-                json_start = response_text.find("```json") + 7
-                json_end = response_text.find("```", json_start)
-                json_text = response_text[json_start:json_end].strip()
-            elif "{" in response_text:
-                # Try to find JSON in the response
-                json_start = response_text.find("{")
-                json_end = response_text.rfind("}") + 1
-                json_text = response_text[json_start:json_end]
-            else:
-                raise ValueError("No JSON found in response")
+        # Stage 2: Genre-Adapted Analysis
+        if genre and genre in GENRES:
+            genre_data = await get_genre_adapted_analysis(stage1_data, genre)
+        else:
+            genre_data = {}
+        
+        # Stage 3: Integrated Character Creation
+        stage3_chat = LlmChat(
+            api_key=os.environ['EMERGENT_LLM_KEY'],
+            session_id=f"stage3-{uuid.uuid4()}",
+            system_message="""Create a cohesive character profile that integrates visual analysis with genre context.
             
-            parsed_data = json.loads(json_text)
-            return parsed_data
+Focus on:
+- Realistic abilities that fit both appearance and genre
+- Complex personality traits beyond surface observations
+- Backstory that explains the visual elements
+- Professional/clinical terminology for abilities
+
+Avoid generic fantasy terms. Use specific, grounded language."""
+        ).with_model("anthropic", "claude-sonnet-4-20250514")
+        
+        context = f"Visual: {stage1_data}"
+        if genre_data:
+            context += f"\nGenre Context: {genre_data}"
             
-        except Exception as e:
-            logger.error(f"Failed to parse JSON response: {e}")
-            logger.error(f"Response text: {response_text}")
-            # Return fallback structure with actual response content
-            return {
-                "traits": [
-                    {"category": "Analysis", "trait": f"Raw response: {response_text[:200]}...", "confidence": 0.5}
-                ],
-                "mood": "Analysis in progress",
-                "backstory_seeds": [f"Response parsing failed: {str(e)}"],
-                "power_suggestions": [{
-                    "name": "Analysis Error",
-                    "description": "Please try again",
-                    "limitations": "Technical issue",
-                    "cost_level": 5
-                }],
-                "persona_summary": f"Character analysis encountered parsing issues. Raw response available in traits."
-            }
+        stage3_response = await stage3_chat.send_message(UserMessage(
+            text=f"Create integrated character profile: {context}"
+        ))
+        
+        stage3_data = await parse_json_response(str(stage3_response))
+        
+        # Combine results
+        final_result = {
+            "traits": stage3_data.get("traits", []),
+            "mood": stage3_data.get("mood", "Unknown"),
+            "backstory_seeds": stage3_data.get("realistic_backstory_seeds", genre_data.get("genre_backstory_elements", [])),
+            "power_suggestions": genre_data.get("genre_adapted_powers", stage3_data.get("realistic_abilities", [])),
+            "persona_summary": stage3_data.get("persona_summary", ""),
+            "genre_context": genre_data.get("universe_connections", "") if genre else "",
+            "visual_analysis": stage1_data
+        }
+        
+        return final_result
         
     except Exception as e:
-        logger.error(f"Vision analysis failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Vision analysis failed: {str(e)}")
+        logger.error(f"Multi-stage analysis failed: {e}")
+        return {}
 
+# Keep existing helper functions
 async def get_text_generation(prompt: str, generation_type: str, style_preferences: Optional[Dict] = None) -> Dict[str, Any]:
-    """Generate text using Claude Sonnet 4 for high-quality narrative"""
+    """Generate text using Claude Sonnet 4"""
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage
         
-        # System message based on generation type
         system_messages = {
-            "character": """You are VisionForge's Character Creator, an expert in crafting compelling, non-clichéd characters. 
-Create detailed character profiles that avoid overused tropes. Focus on unique traits, realistic motivations, and interesting flaws.
-Return rich character descriptions with personality, background, goals, and distinctive quirks.""",
-            
-            "story": """You are VisionForge's Story Architect, specializing in creating engaging narratives with depth and originality.
-Craft compelling stories that subvert expectations and avoid tired tropes. Focus on character-driven plots, realistic conflicts, and meaningful themes.
-Build narratives that feel fresh and authentic.""",
-            
-            "backstory": """You are VisionForge's Lore Master, expert at creating rich backstories that feel lived-in and authentic.
-Generate detailed character histories that explain motivations and create depth. Avoid generic 'chosen one' or 'tragic past' clichés.
-Focus on realistic life experiences that shaped the character.""",
-            
-            "dialogue": """You are VisionForge's Dialogue Specialist, crafting natural, character-specific speech patterns.
-Write dialogue that reveals personality, advances plot, and sounds authentic to each character. Avoid exposition dumps and generic speech patterns.
-Each character should have a distinct voice and speaking style."""
+            "character": "You are VisionForge's Character Creator. Create detailed, non-clichéd character profiles.",
+            "story": "You are VisionForge's Story Architect. Craft engaging narratives that subvert expectations.",
+            "backstory": "You are VisionForge's Lore Master. Generate rich character histories.",
+            "dialogue": "You are VisionForge's Dialogue Specialist. Write authentic character conversations."
         }
         
         chat = LlmChat(
             api_key=os.environ['EMERGENT_LLM_KEY'],
             session_id=f"text-gen-{uuid.uuid4()}",
             system_message=system_messages.get(generation_type, system_messages["character"])
-        )
+        ).with_model("anthropic", "claude-sonnet-4-20250514")
         
-        chat = chat.with_model("anthropic", "claude-sonnet-4-20250514")
+        enhanced_prompt = f"Create {generation_type}: {prompt}\n\nStyle: {style_preferences or 'Authentic, avoiding clichés'}"
+        response = await chat.send_message(UserMessage(text=enhanced_prompt))
         
-        # Enhanced prompt based on type
-        enhanced_prompt = f"""Create a {generation_type} based on this prompt: {prompt}
-
-Style preferences: {style_preferences if style_preferences else 'Natural, engaging, avoiding clichés'}
-
-Requirements:
-- Avoid overused tropes and clichéd language
-- Create unique, memorable elements
-- Focus on authentic character voice and realistic details
-- Provide specific, vivid descriptions
-- Make it engaging and original
-
-Respond with well-structured, high-quality content."""
-        
-        user_message = UserMessage(text=enhanced_prompt)
-        response = await chat.send_message(user_message)
-        
-        # Basic cliché detection
         response_text = str(response)
-        cliche_indicators = [
-            "chosen one", "ancient prophecy", "dark past", "mysterious stranger",
-            "hidden power", "royal bloodline", "tragic backstory", "destiny calls",
-            "nestled", "delve", "meticulous", "tapestry", "enigmatic"
-        ]
-        
+        cliche_indicators = ["chosen one", "ancient prophecy", "dark past", "mysterious stranger", "kinesis", "manipulation"]
         cliche_count = sum(1 for indicator in cliche_indicators if indicator.lower() in response_text.lower())
         cliche_score = min(cliche_count * 0.1, 1.0)
         
         return {
             "generated_text": response_text,
             "cliche_score": cliche_score,
-            "suggestions": ["Consider adding more specific details", "Develop unique character traits", "Avoid common fantasy tropes"] if cliche_score > 0.3 else []
+            "suggestions": ["Consider more specific details", "Avoid common tropes"] if cliche_score > 0.3 else []
         }
         
     except Exception as e:
@@ -411,199 +476,191 @@ Respond with well-structured, high-quality content."""
         raise HTTPException(status_code=500, detail=f"Text generation failed: {str(e)}")
 
 async def analyze_writing_style(text: str) -> Dict[str, Any]:
-    """Analyze text for clichés and style issues using Claude"""
+    """Analyze text for style issues"""
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage
         
         chat = LlmChat(
             api_key=os.environ['EMERGENT_LLM_KEY'],
             session_id=f"style-analysis-{uuid.uuid4()}",
-            system_message="""You are VisionForge's Style Coach, an expert editor specializing in detecting and fixing clichéd writing.
-
-Analyze the provided text and return a JSON response with this structure:
-{
-  "cliche_score": 0.7,
-  "issues": [
-    {"type": "cliche", "text": "dark and stormy night", "suggestion": "Describe specific weather details instead"},
-    {"type": "overused_word", "text": "delve", "suggestion": "Use 'explore', 'investigate', or 'examine' instead"},
-    {"type": "passive_voice", "text": "was destroyed by", "suggestion": "Make it active: 'The storm destroyed'"}
-  ],
-  "suggestions": [
-    "Add more specific sensory details",
-    "Vary sentence structure",
-    "Show don't tell emotions"
-  ],
-  "rewritten_text": "Here's an improved version of your text..."
-}
-
-Focus on:
-- Overused AI words (delve, nestled, meticulous, tapestry, enigmatic)
-- Generic fantasy tropes
-- Passive voice
-- Telling vs showing
-- Clichéd phrases
-- Repetitive word usage"""
-        )
+            system_message="""Analyze text for clichés and style issues. Focus on overused AI words, generic fantasy tropes, passive voice, and telling vs showing."""
+        ).with_model("anthropic", "claude-sonnet-4-20250514")
         
-        chat = chat.with_model("anthropic", "claude-sonnet-4-20250514")
+        response = await chat.send_message(UserMessage(
+            text=f"Analyze this text for style issues: {text}"
+        ))
         
-        user_message = UserMessage(
-            text=f"""Analyze this text for style issues, clichés, and overused phrases. Provide specific suggestions for improvement and a rewritten version:
-
-{text}
-
-Return the analysis in the exact JSON format specified."""
-        )
+        # Basic fallback analysis
+        cliche_indicators = ["delve", "nestled", "meticulous", "tapestry", "enigmatic"]
+        cliche_count = sum(1 for indicator in cliche_indicators if indicator.lower() in text.lower())
         
-        response = await chat.send_message(user_message)
+        return {
+            "cliche_score": min(cliche_count * 0.2, 1.0),
+            "issues": [{"type": "analysis", "text": "Style analysis", "suggestion": "Review for improvements"}],
+            "suggestions": ["Consider more specific language"],
+            "rewritten_text": str(response)
+        }
         
-        # Parse JSON response
-        import json
-        try:
-            response_text = str(response)
-            if "```json" in response_text:
-                json_start = response_text.find("```json") + 7
-                json_end = response_text.find("```", json_start)
-                json_text = response_text[json_start:json_end].strip()
-            else:
-                json_start = response_text.find("{")
-                json_end = response_text.rfind("}") + 1
-                json_text = response_text[json_start:json_end]
-            
-            return json.loads(json_text)
-            
-        except Exception as e:
-            # Fallback analysis
-            cliche_indicators = ["delve", "nestled", "meticulous", "tapestry", "enigmatic", "ancient", "mysterious", "dark past"]
-            cliche_count = sum(1 for indicator in cliche_indicators if indicator.lower() in text.lower())
-            
-            return {
-                "cliche_score": min(cliche_count * 0.2, 1.0),
-                "issues": [{"type": "parsing_error", "text": "Analysis failed", "suggestion": "Try again"}],
-                "suggestions": ["Text analysis encountered technical difficulties"],
-                "rewritten_text": "Please resubmit for analysis"
-            }
-            
     except Exception as e:
         logger.error(f"Style analysis failed: {e}")
         raise HTTPException(status_code=500, detail=f"Style analysis failed: {str(e)}")
-
 
 # API Endpoints
 @api_router.get("/")
 async def root():
-    return {"message": "VisionForge API - Image-to-Lore Analysis System"}
+    return {"message": "VisionForge API - Integrated Character Creation System"}
 
-@api_router.post("/analyze-image", response_model=CharacterAnalysisResponse)
-async def analyze_image(file: UploadFile = File(...)):
-    """Upload and analyze an image for character traits, backstory, and powers"""
+@api_router.get("/genres")
+async def get_available_genres():
+    """Get list of available genres/universes"""
+    return {"genres": GENRES}
+
+@api_router.post("/analyze-image", response_model=IntegratedAnalysisResponse)
+async def analyze_image(file: UploadFile = File(...), genre: Optional[str] = None):
+    """Upload and analyze image with optional genre context"""
     try:
-        # Validate file type
         if not file.content_type.startswith('image/'):
             raise HTTPException(status_code=400, detail="File must be an image")
         
-        # Read and process image
         image_data = await file.read()
         
-        # Get multi-stage analysis for higher quality
-        analysis_data = await get_multi_stage_analysis(image_data, file.filename)
+        # Get genre-adapted multi-stage analysis
+        analysis_data = await get_multi_stage_analysis(image_data, file.filename, genre)
         
-        # Create character analysis object
-        character_analysis = CharacterAnalysis(
+        # Create character profile
+        character = CharacterProfile(
             image_name=file.filename,
-            traits=[CharacterTrait(**trait) for trait in analysis_data["traits"]],
-            mood=analysis_data["mood"],
-            backstory_seeds=analysis_data["backstory_seeds"],
-            power_suggestions=[PowerSuggestion(**power) for power in analysis_data["power_suggestions"]],
-            persona_summary=analysis_data["persona_summary"]
+            genre_universe=genre,
+            traits=[CharacterTrait(**trait) for trait in analysis_data.get("traits", [])],
+            mood=analysis_data.get("mood"),
+            backstory_seeds=analysis_data.get("backstory_seeds", []),
+            power_suggestions=[PowerSuggestion(**power) for power in analysis_data.get("power_suggestions", [])],
+            persona_summary=analysis_data.get("persona_summary"),
+            creation_stages=["image_analysis"]
         )
         
         # Store in database
-        analysis_dict = character_analysis.dict()
-        await db.character_analyses.insert_one(analysis_dict)
+        await db.character_profiles.insert_one(character.dict())
         
-        return CharacterAnalysisResponse(
-            analysis=character_analysis,
+        # Generate suggestions for next steps
+        suggestions = [
+            "Use Text Generator to expand the backstory",
+            "Add dialogue samples to develop the character's voice",
+            "Run Style Coach to refine any clichéd elements"
+        ]
+        
+        next_steps = [
+            f"enhance_character?character_id={character.id}&type=expand_backstory",
+            f"enhance_character?character_id={character.id}&type=add_dialogue",
+            f"enhance_character?character_id={character.id}&type=style_analysis"
+        ]
+        
+        return IntegratedAnalysisResponse(
+            character=character,
+            suggestions=suggestions,
+            next_steps=next_steps,
             success=True,
-            message="Character analysis completed successfully"
+            message="Character analysis completed. Ready for enhancement with other tools."
         )
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Image analysis failed: {e}")
+        logger.error(f"Integrated analysis failed: {e}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
-@api_router.post("/generate-text", response_model=TextGenerationResponse)
-async def generate_text(request: TextGenerationRequest):
-    """Generate character descriptions, stories, backstories, or dialogue"""
+@api_router.post("/enhance-character")
+async def enhance_character(request: CharacterEnhancementRequest):
+    """Enhance character using other VisionForge tools"""
+    try:
+        enhancement_result = await enhance_character_with_tools(
+            request.character_id, 
+            request.enhancement_type, 
+            request.prompt
+        )
+        
+        if "error" in enhancement_result:
+            raise HTTPException(status_code=400, detail=enhancement_result["error"])
+        
+        # Update character in database
+        update_data = {"updated_at": datetime.utcnow()}
+        
+        if request.enhancement_type == "expand_backstory":
+            update_data["expanded_backstory"] = enhancement_result["expanded_backstory"]
+        elif request.enhancement_type == "add_dialogue":
+            update_data["dialogue_samples"] = enhancement_result["dialogue_samples"]
+        elif request.enhancement_type == "style_analysis":
+            update_data["style_notes"] = enhancement_result
+        elif request.enhancement_type == "trope_analysis":
+            update_data["trope_analysis"] = enhancement_result["trope_analysis"]
+        
+        # Add to creation stages
+        await db.character_profiles.update_one(
+            {"id": request.character_id},
+            {
+                "$set": update_data,
+                "$addToSet": {"creation_stages": request.enhancement_type}
+            }
+        )
+        
+        return {"enhancement_result": enhancement_result, "success": True}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Character enhancement failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Enhancement failed: {str(e)}")
+
+@api_router.get("/character/{character_id}")
+async def get_character(character_id: str):
+    """Get complete character profile"""
+    try:
+        character_doc = await db.character_profiles.find_one({"id": character_id})
+        if not character_doc:
+            raise HTTPException(status_code=404, detail="Character not found")
+        
+        return CharacterProfile(**character_doc)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to fetch character: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch character")
+
+# Keep existing endpoints for backward compatibility
+@api_router.post("/generate-text")
+async def generate_text(request: dict):
+    """Generate text (legacy endpoint)"""
     try:
         result = await get_text_generation(
-            request.prompt, 
-            request.generation_type,
-            request.style_preferences
+            request["prompt"], 
+            request["generation_type"],
+            request.get("style_preferences")
         )
-        
-        return TextGenerationResponse(
-            generated_text=result["generated_text"],
-            cliche_score=result["cliche_score"],
-            suggestions=result["suggestions"],
-            success=True,
-            message="Text generation completed successfully"
-        )
-        
-    except HTTPException:
-        raise
+        return {"generated_text": result["generated_text"], "cliche_score": result["cliche_score"], "suggestions": result["suggestions"], "success": True, "message": "Text generated"}
     except Exception as e:
-        logger.error(f"Text generation failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Text generation failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.post("/analyze-style", response_model=StyleAnalysisResponse)
-async def analyze_style(request: StyleAnalysisRequest):
-    """Analyze text for clichés and style issues"""
+@api_router.post("/analyze-style")
+async def analyze_style(request: dict):
+    """Analyze writing style (legacy endpoint)"""
     try:
-        result = await analyze_writing_style(request.text)
-        
-        return StyleAnalysisResponse(
-            cliche_score=result["cliche_score"],
-            issues=result["issues"],
-            suggestions=result["suggestions"],
-            rewritten_text=result["rewritten_text"],
-            success=True,
-            message="Style analysis completed successfully"
-        )
-        
-    except HTTPException:
-        raise
+        result = await analyze_writing_style(request["text"])
+        return {"cliche_score": result["cliche_score"], "issues": result["issues"], "suggestions": result["suggestions"], "rewritten_text": result["rewritten_text"], "success": True, "message": "Analysis complete"}
     except Exception as e:
-        logger.error(f"Style analysis failed: {e}")
-        raise HTTPException(status_code=500, detail=f"Style analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.get("/analyses", response_model=List[CharacterAnalysis])
+@api_router.get("/analyses")
 async def get_character_analyses():
-    """Get all character analyses"""
+    """Get all character profiles"""
     try:
-        analyses = await db.character_analyses.find().sort("created_at", -1).to_list(100)
-        return [CharacterAnalysis(**analysis) for analysis in analyses]
+        analyses = await db.character_profiles.find().sort("created_at", -1).to_list(100)
+        return [CharacterProfile(**analysis) for analysis in analyses]
     except Exception as e:
         logger.error(f"Failed to fetch analyses: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch analyses")
 
-@api_router.get("/analyses/{analysis_id}", response_model=CharacterAnalysis)
-async def get_character_analysis(analysis_id: str):
-    """Get a specific character analysis by ID"""
-    try:
-        analysis = await db.character_analyses.find_one({"id": analysis_id})
-        if not analysis:
-            raise HTTPException(status_code=404, detail="Analysis not found")
-        return CharacterAnalysis(**analysis)
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Failed to fetch analysis: {e}")
-        raise HTTPException(status_code=500, detail="Failed to fetch analysis")
-
-# Include the router in the main app
+# Include router and setup
 app.include_router(api_router)
 
 app.add_middleware(
@@ -614,11 +671,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 @app.on_event("shutdown")
