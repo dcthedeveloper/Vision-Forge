@@ -1,0 +1,72 @@
+<analysis>
+The previous AI engineer successfully initiated VisionForge, a full-stack application designed to aid creators with deep control and cross-modal continuity for narrative development. The development followed a phased approach, starting with the core Image-to-Lore Analyzer as per user priority. Initial implementation involved setting up the React frontend, FastAPI backend, and MongoDB, along with  for LLM access. Key challenges included debugging  API usage for image data, handling MongoDB ObjectId serialization, and refining AI prompts to reduce cheesy output and provide more nuanced character analyses, especially after the user provided a detailed Marcus character example. The engineer also introduced a comprehensive character classification system and an OP/Broken Character mode. Currently, the project is transitioning into Phase 2, focusing on advanced narrative tools like a Beat-Sheet Generator, but a significant change in AI model integration to Ollama was requested by the user.
+</analysis>
+
+<product_requirements>
+The VisionForge application aims to solve creator fragmentation and cheesy prose by providing a cross-modal continuity engine. The core MVP prioritizes an **Image-to-Lore Analyzer** to extract traits, mood, backstory, and power suggestions from images, bypassing manual data entry. It uses a **multi-model AI ensemble** (Claude Sonnet 4 for narrative, GPT-4o for logic/vision, GPT-4V/Claude Sonnet 4 Vision for image analysis) and a **Hybrid RAG + Knowledge Graph data architecture** (Neo4j/FalkorDB for relational, Pinecone/Qdrant for vector search).
+
+Implemented features include a detailed **Character Classification System** (origins, social status, power sources, archetypes), a **Style Coach** for writing improvement, and a **Trope & Archetype Builder**. The system evolved to support **Marcus-style character creation** with nootropic enhancements and geographic context. Recent additions include a **Knowledge Graph layer**, **Vector Database integration**, a **Rule Engine** for continuity, and an **OP/Broken Character Mode**. The user emphasized an **integrated workflow** where all tools work cohesively, and requested **genre/universe selection** and more character classification depth. The current task involves moving to Phase 2 with a Beat-Sheet Generator, and a significant shift to Ollama for all AI functionality.
+</product_requirements>
+
+<key_technical_concepts>
+- **Full-stack MVP**: React (frontend), FastAPI (backend), MongoDB (database).
+- **AI Model Ensemble**: Claude Sonnet 4 (narrative), GPT-4o (logic, vision), GPT-4V (vision).
+- **Hybrid Data Architecture**: Knowledge Graph (Neo4j/FalkorDB), Vector Database (Pinecone/Qdrant), MongoDB (document).
+- **Emergentintegrations**: Custom library for unified LLM access (OpenAI, Claude).
+- **Shadcn/UI**: Frontend component library for modern UI.
+- **Tailwind CSS**: Utility-first CSS framework.
+- **Supervisor**: Process control system for services.
+- **Ollama**: Local/self-hosted LLM integration.
+</key_technical_concepts>
+
+<code_architecture>
+The application follows a standard full-stack architecture:
+
+
+
+**Key Files and Changes:**
+
+*   **/app/backend/server.py**: This is the core backend logic. It has been extensively modified to:
+    *   Handle API endpoints for image analysis (), text generation, style analysis, and history management ().
+    *   Integrate  for OpenAI (vision) and Claude (text) models, initially for mock data, then refined for real AI and base64 image encoding.
+    *   Implement multi-stage analysis, Marcus-style character analysis, and OP/Broken Character mode logic.
+    *   Integrate , , and  modules.
+    *   Implement MongoDB operations, including ObjectId serialization fixes.
+*   **/app/frontend/src/App.js**: Main React component. Modified to include routing for different features (Image Analyzer, Text Generator, Style Coach, Trope Builder) using a tab system and incorporating .
+*   **/app/frontend/src/components/ImageAnalyzer.js**: Critical for the flagship feature. Underwent significant changes to:
+    *   Implement image upload with live preview.
+    *   Add comprehensive character classification dropdowns (origins, social status, power sources, archetypes).
+    *   Support genre/universe selection.
+    *   Integrate Marcus-style enhancements and the OP Mode button with conditional styling.
+    *   Display results from the backend analysis and rule violations from .
+*   **/app/frontend/src/components/AnalysisHistory.js**: Displays past character analyses stored in MongoDB. Fixed for proper data loading and serialization.
+*   **/app/backend/knowledge_graph.py**: New file, outlines integration with a Knowledge Graph (e.g., Neo4j/FalkorDB) for relationships between archetypes, origins, and powers.
+*   **/app/backend/vector_db.py**: New file, defines integration with a Vector Database (e.g., Qdrant) for semantic search and continuity checks.
+*   **/app/backend/rule_engine.py**: New file, implements the basic rule engine for checking character consistency and power limits.
+*   **/app/backend/.env & /app/frontend/.env**: Contain critical environment variables like  and . These are referenced, not hardcoded.
+*   **/app/backend/requirements.txt**: Updated to include , , .
+*   **/app/frontend/src/components/TextGenerator.js, StyleCoach.js, TropeBuilder.js**: New files for respective features, initially placeholders, then integrated into the UI.
+*   **/app/frontend/src/components/ContinuityLinter.js**: New file, displays rule violations and suggestions from the backend.
+*   **/app/backend/beat_sheet_generator.py & enhanced_trope_meter.py**: New files for Phase 2 components.
+</code_architecture>
+
+<pending_tasks>
+- Complete implementation of the Beat-Sheet Generator.
+- Implement the Enhanced Trope Risk Meter with real-time freshness scoring.
+- Develop the Flow vs Craft Mode UX.
+- Enhance Style Coach 2.0 (show-don't-tell, weak verb detection).
+- Integrate Ollama for all AI functionality as requested by the user.
+</pending_tasks>
+
+<current_work>
+Immediately prior to this summary request, the AI engineer was transitioning into **Phase 2** of the VisionForge enhancement roadmap. The first two components for Phase 2 were just created:
+1.  ****: This file was created to lay the groundwork for a module that will generate narrative beat sheets (e.g., Save the Cat, Dan Harmon, 3-Act structures).
+2.  ****: This file was created to implement a system for real-time freshness scoring of tropes and identifying clichés.
+
+However, after these files were created, the user intervened with a new instruction to **switch all AI functionality to Ollama**. This new directive immediately superseded the ongoing Phase 2 development. Therefore, the current work is paused on implementing the Beat-Sheet Generator and Trope Risk Meter, and the focus has shifted to integrating Ollama.
+</current_work>
+
+<optional_next_step>
+Integrate Ollama for all AI functionality within VisionForge.
+</optional_next_step>
+
