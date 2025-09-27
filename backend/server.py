@@ -1929,8 +1929,16 @@ async def check_continuity_endpoint(request: dict):
         new_content = request.get("content", {})
         context_characters = request.get("context_characters", [])
         
+        # Extract character IDs if context_characters contains objects
+        character_ids = []
+        for char in context_characters:
+            if isinstance(char, dict):
+                character_ids.append(char.get("id", "unknown"))
+            else:
+                character_ids.append(str(char))
+        
         continuity_engine = get_continuity_engine()
-        violations = continuity_engine.check_continuity(new_content, context_characters)
+        violations = continuity_engine.check_continuity(new_content, character_ids)
         
         # Convert violations to dict format
         result = {
