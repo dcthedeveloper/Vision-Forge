@@ -11,6 +11,7 @@ import TropeBuilder from "./components/TropeBuilder";
 import BeatSheetGenerator from "./components/BeatSheetGenerator";
 import TropeRiskMeter from "./components/TropeRiskMeter";
 import AISettings from "./components/AISettings";
+import AdvancedPowerSystem from "./components/AdvancedPowerSystem";
 import { Button } from "./components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
