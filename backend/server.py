@@ -136,33 +136,6 @@ Be specific and avoid generic descriptions. Focus on unique details that tell a 
         }
         
         return mock_analysis
-        
-        # Parse JSON response
-        import json
-        try:
-            # Extract JSON from response
-            response_text = str(response)
-            if "```json" in response_text:
-                json_start = response_text.find("```json") + 7
-                json_end = response_text.find("```", json_start)
-                json_text = response_text[json_start:json_end].strip()
-            else:
-                # Try to find JSON in the response
-                json_start = response_text.find("{")
-                json_end = response_text.rfind("}") + 1
-                json_text = response_text[json_start:json_end]
-            
-            return json.loads(json_text)
-        except Exception as e:
-            logger.error(f"Failed to parse JSON response: {e}")
-            # Return fallback structure
-            return {
-                "traits": [{"category": "Analysis", "trait": "Image processed but parsing failed", "confidence": 0.5}],
-                "mood": "Unable to determine",
-                "backstory_seeds": ["Character analysis in progress"],
-                "power_suggestions": [{"name": "Unknown Ability", "description": "Powers to be determined", "limitations": "Analysis incomplete", "cost_level": 5}],
-                "persona_summary": "Character analysis encountered technical difficulties. Please try again."
-            }
             
     except Exception as e:
         logger.error(f"Vision analysis failed: {e}")
