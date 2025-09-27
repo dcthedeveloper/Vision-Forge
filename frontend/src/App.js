@@ -125,14 +125,30 @@ function App() {
                     <Card className="border-indigo-500/20 bg-slate-800/50 backdrop-blur-sm">
                       <CardHeader className="text-center">
                         <CardTitle className="text-3xl font-bold text-white font-['Inter']">
-                          Style Coach
+                          Enhanced Style Coach
                         </CardTitle>
                         <CardDescription className="text-indigo-200 text-lg">
-                          Analyze and improve your writing by detecting clichés and style issues
+                          Deep style analysis with detailed explanations and educational rationale
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <StyleCoach />
+                        <EnhancedStyleCoach aiSettings={aiSettings} />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="continuity" className="space-y-8">
+                    <Card className="border-indigo-500/20 bg-slate-800/50 backdrop-blur-sm">
+                      <CardHeader className="text-center">
+                        <CardTitle className="text-3xl font-bold text-white font-['Inter']">
+                          Continuity Engine
+                        </CardTitle>
+                        <CardDescription className="text-indigo-200 text-lg">
+                          Advanced consistency checking across characters, powers, and timeline
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ContinuityLinter aiSettings={aiSettings} />
                       </CardContent>
                     </Card>
                   </TabsContent>
