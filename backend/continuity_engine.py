@@ -364,10 +364,18 @@ class ContinuityEngine:
     def _extract_core_personality(self, character_data: Dict[str, Any]) -> List[str]:
         """Extract core personality traits"""
         traits = character_data.get('traits', [])
-        return [trait for trait in traits if self._is_core_trait(trait)]
+        core_traits = []
+        for trait in traits:
+            # Handle both string and dict formats
+            trait_text = trait if isinstance(trait, str) else trait.get('trait', '')
+            if self._is_core_trait(trait_text):
+                core_traits.append(trait_text)
+        return core_traits
     
     def _is_core_trait(self, trait: str) -> bool:
         """Determine if a trait is a core personality trait"""
+        if not isinstance(trait, str):
+            return False
         core_trait_keywords = [
             'honest', 'dishonest', 'brave', 'cowardly', 'kind', 'cruel',
             'loyal', 'treacherous', 'patient', 'impulsive', 'calm', 'aggressive'
