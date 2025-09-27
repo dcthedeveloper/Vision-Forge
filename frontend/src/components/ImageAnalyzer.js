@@ -146,7 +146,9 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
     "Double Agent", "Vigilante", "Government Agent", "Rebel", "Pacifist",
     "System Changer", "Power Broker", "Empire Builder", "Network Master",
     "Strategic Mastermind", "Cultural Bridge", "Economic Disruptor", "Shadow Operator",
-    "Community Leader", "Underground King", "Corporate Infiltrator", "Street Philosopher"
+    "Community Leader", "Underground King", "Corporate Infiltrator", "Street Philosopher",
+    // OP Mode tags get added dynamically
+    ...(opMode ? OP_ARCHETYPE_TAGS : [])
   ];
 
   const handleFileSelect = useCallback((event) => {
