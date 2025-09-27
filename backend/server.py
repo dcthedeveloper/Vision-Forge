@@ -1922,7 +1922,7 @@ def _generate_creative_applications(power_system) -> List[str]:
     return applications[:5]
 
 # Continuity Engine Endpoints
-@api_router.post("/check-continuity")
+@api_router.post("/check-continuity-advanced")
 async def check_continuity_endpoint(request: dict):
     """Check content for continuity violations"""
     try:
