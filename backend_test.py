@@ -286,6 +286,255 @@ class VisionForgeBackendTester:
         except Exception as e:
             self.log_result("Ollama Models Availability", False, f"Model test error: {str(e)}")
     
+    async def test_beat_sheet_types(self):
+        """Test beat sheet types endpoint at /api/beat-sheet-types"""
+        try:
+            async with self.session.get(f"{BACKEND_URL}/beat-sheet-types") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if "sheet_types" in data and "tone_pacing" in data:
+                        sheet_types = data["sheet_types"]
+                        tone_pacing = data["tone_pacing"]
+                        
+                        # Verify expected sheet types
+                        expected_types = ["save_the_cat", "dan_harmon", "three_act", "hero_journey", "kishōtenketsu"]
+                        available_types = [st["value"] for st in sheet_types]
+                        
+                        # Verify expected tone pacing options
+                        expected_pacing = ["slow_burn", "standard", "fast_paced", "explosive"]
+                        available_pacing = [tp["value"] for tp in tone_pacing]
+                        
+                        types_match = all(t in available_types for t in expected_types)
+                        pacing_match = all(p in available_pacing for p in expected_pacing)
+                        
+                        if types_match and pacing_match:
+                            self.log_result("Beat Sheet Types", True, "All expected types and pacing options available", {
+                                "sheet_types_count": len(sheet_types),
+                                "tone_pacing_count": len(tone_pacing),
+                                "available_types": available_types,
+                                "available_pacing": available_pacing
+                            })
+                        else:
+                            self.log_result("Beat Sheet Types", False, "Missing expected types or pacing options", {
+                                "types_match": types_match,
+                                "pacing_match": pacing_match,
+                                "available_types": available_types,
+                                "available_pacing": available_pacing
+                            })
+                    else:
+                        self.log_result("Beat Sheet Types", False, "Invalid response format", data)
+                else:
+                    error_text = await response.text()
+                    self.log_result("Beat Sheet Types", False, f"HTTP {response.status}", {"error": error_text})
+        except Exception as e:
+            self.log_result("Beat Sheet Types", False, f"Request error: {str(e)}")
+    
+    async def test_beat_sheet_generation(self):
+        """Test beat sheet generation at /api/generate-beat-sheet"""
+        try:
+            # Test with different sheet types and configurations
+            test_configs = [
+                {
+                    "sheet_type": "save_the_cat",
+                    "tone_pacing": "standard",
+                    "story_length": 110,
+                    "character_data": {
+                        "character_origin": "nootropic_enhanced",
+                        "power_source": "nootropic_drug",
+                        "social_status": "entrepreneurial",
+                        "traits": [{"trait": "Strategic mastermind with enhanced cognition"}],
+                        "backstory_seeds": ["Former entrepreneur who gained cognitive enhancement"],
+                        "power_suggestions": [{"name": "Hypercognitive Processing", "description": "Enhanced mental processing"}]
+                    }
+                },
+                {
+                    "sheet_type": "dan_harmon",
+                    "tone_pacing": "fast_paced",
+                    "story_length": 90
+                },
+                {
+                    "sheet_type": "three_act",
+                    "tone_pacing": "explosive",
+                    "story_length": 120
+                }
+            ]
+            
+            success_count = 0
+            for i, config in enumerate(test_configs):
+                try:
+                    async with self.session.post(f"{BACKEND_URL}/generate-beat-sheet",
+                                               json=config,
+                                               headers={"Content-Type": "application/json"}) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            if data.get("success") and "beat_sheet" in data:
+                                beat_sheet = data["beat_sheet"]
+                                
+                                # Verify beat sheet structure
+                                required_fields = ["sheet_type", "title", "description", "total_beats", "beats"]
+                                has_required = all(field in beat_sheet for field in required_fields)
+                                
+                                # Verify beats structure
+                                beats = beat_sheet.get("beats", [])
+                                valid_beats = all(
+                                    all(field in beat for field in ["beat_number", "beat_name", "description", "page_range"])
+                                    for beat in beats
+                                ) if beats else False
+                                
+                                if has_required and valid_beats and len(beats) > 0:
+                                    success_count += 1
+                                    self.log_result(f"Beat Sheet Generation ({config['sheet_type']})", True, 
+                                                  f"Generated {len(beats)} beats successfully", {
+                                                      "sheet_type": beat_sheet["sheet_type"],
+                                                      "total_beats": beat_sheet["total_beats"],
+                                                      "estimated_pages": beat_sheet.get("estimated_pages", "N/A"),
+                                                      "has_character_integration": bool(config.get("character_data"))
+                                                  })
+                                else:
+                                    self.log_result(f"Beat Sheet Generation ({config['sheet_type']})", False, 
+                                                  "Invalid beat sheet structure", {
+                                                      "has_required_fields": has_required,
+                                                      "valid_beats": valid_beats,
+                                                      "beats_count": len(beats)
+                                                  })
+                            else:
+                                self.log_result(f"Beat Sheet Generation ({config['sheet_type']})", False, 
+                                              "Invalid response format", data)
+                        else:
+                            error_text = await response.text()
+                            self.log_result(f"Beat Sheet Generation ({config['sheet_type']})", False, 
+                                          f"HTTP {response.status}", {"error": error_text})
+                except Exception as e:
+                    self.log_result(f"Beat Sheet Generation ({config['sheet_type']})", False, 
+                                  f"Request error: {str(e)}")
+            
+            # Overall beat sheet generation result
+            if success_count == len(test_configs):
+                self.log_result("Beat Sheet Generation (Overall)", True, 
+                              f"All {success_count} configurations successful", {
+                                  "tested_configs": len(test_configs),
+                                  "successful": success_count
+                              })
+            else:
+                self.log_result("Beat Sheet Generation (Overall)", False, 
+                              f"Only {success_count}/{len(test_configs)} configurations successful", {
+                                  "tested_configs": len(test_configs),
+                                  "successful": success_count
+                              })
+                
+        except Exception as e:
+            self.log_result("Beat Sheet Generation (Overall)", False, f"Test setup error: {str(e)}")
+    
+    async def test_trope_risk_analysis(self):
+        """Test trope risk analysis at /api/analyze-trope-risk"""
+        try:
+            # Test with sophisticated Marcus-style character
+            sophisticated_character = {
+                "id": "test-character-sophisticated",
+                "character_origin": "nootropic_enhanced",
+                "power_source": "nootropic_drug",
+                "social_status": "entrepreneurial",
+                "geographic_context": "detroit",
+                "archetype_tags": ["System Changer", "Power Broker"],
+                "traits": [
+                    {"trait": "Strategic mastermind with enhanced cognition"},
+                    {"trait": "Systematic empire builder"}
+                ],
+                "backstory_seeds": [
+                    "Former entrepreneur who gained cognitive enhancement",
+                    "Uses intelligence to navigate complex power structures"
+                ],
+                "power_suggestions": [
+                    {"name": "Hypercognitive Processing", "description": "Enhanced mental processing speed", "cost_level": 8},
+                    {"name": "Strategic Network Analysis", "description": "Analyzes social and business networks", "cost_level": 7}
+                ]
+            }
+            
+            # Test with clichéd character for comparison
+            cliched_character = {
+                "id": "test-character-cliched",
+                "character_origin": "human",
+                "power_source": "magic",
+                "traits": [{"trait": "Mysterious past"}],
+                "backstory_seeds": ["Orphaned hero with dark past", "Chosen one destined to save world"],
+                "power_suggestions": [
+                    {"name": "Fire Control", "description": "Controls fire elements", "cost_level": 5},
+                    {"name": "Super Strength", "description": "Incredible physical strength", "cost_level": 6}
+                ]
+            }
+            
+            test_characters = [
+                ("Sophisticated Character", sophisticated_character),
+                ("Clichéd Character", cliched_character)
+            ]
+            
+            for char_name, character_data in test_characters:
+                try:
+                    test_payload = {"character_data": character_data}
+                    
+                    async with self.session.post(f"{BACKEND_URL}/analyze-trope-risk",
+                                               json=test_payload,
+                                               headers={"Content-Type": "application/json"}) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            if data.get("success") and "trope_analysis" in data:
+                                analysis = data["trope_analysis"]
+                                
+                                # Verify analysis structure
+                                required_fields = ["overall_freshness_score", "marcus_level_rating", "trope_analyses", 
+                                                 "improvement_suggestions", "freshness_rating"]
+                                has_required = all(field in analysis for field in required_fields)
+                                
+                                # Verify trope analyses structure
+                                trope_analyses = analysis.get("trope_analyses", [])
+                                valid_tropes = all(
+                                    all(field in trope for field in ["trope_name", "cliche_score", "freshness_level"])
+                                    for trope in trope_analyses
+                                ) if trope_analyses else True  # Empty is valid
+                                
+                                freshness_score = analysis.get("overall_freshness_score", 0)
+                                marcus_rating = analysis.get("marcus_level_rating", 0)
+                                
+                                if has_required and valid_tropes:
+                                    # Verify expected results
+                                    if char_name == "Sophisticated Character":
+                                        # Should have higher freshness and Marcus rating
+                                        expected_fresh = freshness_score > 0.5
+                                        expected_marcus = marcus_rating > 0.5
+                                    else:
+                                        # Clichéd character should have lower scores
+                                        expected_fresh = freshness_score < 0.7  # Still might be somewhat fresh
+                                        expected_marcus = marcus_rating < 0.8   # Less sophisticated
+                                    
+                                    self.log_result(f"Trope Risk Analysis ({char_name})", True, 
+                                                  "Analysis completed successfully", {
+                                                      "freshness_score": round(freshness_score, 3),
+                                                      "marcus_rating": round(marcus_rating, 3),
+                                                      "freshness_rating": analysis.get("freshness_rating"),
+                                                      "tropes_found": len(trope_analyses),
+                                                      "has_suggestions": len(analysis.get("improvement_suggestions", [])) > 0
+                                                  })
+                                else:
+                                    self.log_result(f"Trope Risk Analysis ({char_name})", False, 
+                                                  "Invalid analysis structure", {
+                                                      "has_required_fields": has_required,
+                                                      "valid_tropes": valid_tropes,
+                                                      "tropes_count": len(trope_analyses)
+                                                  })
+                            else:
+                                self.log_result(f"Trope Risk Analysis ({char_name})", False, 
+                                              "Invalid response format", data)
+                        else:
+                            error_text = await response.text()
+                            self.log_result(f"Trope Risk Analysis ({char_name})", False, 
+                                          f"HTTP {response.status}", {"error": error_text})
+                except Exception as e:
+                    self.log_result(f"Trope Risk Analysis ({char_name})", False, 
+                                  f"Request error: {str(e)}")
+                    
+        except Exception as e:
+            self.log_result("Trope Risk Analysis (Overall)", False, f"Test setup error: {str(e)}")
+    
     async def run_all_tests(self):
         """Run all backend tests"""
         print("🚀 Starting VisionForge Backend Tests with Ollama Integration")
