@@ -333,7 +333,7 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
           {/* Advanced Settings */}
           {showAdvanced && (
             <div className="space-y-4 p-4 bg-slate-700/30 rounded-lg border border-indigo-500/20">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* Social Status */}
                 <div>
                   <label className="block text-sm font-medium text-indigo-300 mb-2">
@@ -371,6 +371,44 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Evolution Stage */}
+                <div>
+                  <label className="block text-sm font-medium text-indigo-300 mb-2">
+                    Power Evolution
+                  </label>
+                  <Select value={evolutionStage} onValueChange={setEvolutionStage}>
+                    <SelectTrigger className="bg-slate-800 border-indigo-500/30 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-indigo-500/30">
+                      {Object.entries(POWER_EVOLUTION_STAGES).map(([key, name]) => (
+                        <SelectItem key={key} value={key} className="text-white hover:bg-slate-700">
+                          {name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Geographic Context */}
+              <div>
+                <label className="block text-sm font-medium text-indigo-300 mb-2">
+                  Geographic Context
+                </label>
+                <Select value={geographicContext} onValueChange={setGeographicContext}>
+                  <SelectTrigger className="bg-slate-800 border-indigo-500/30 text-white">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-800 border-indigo-500/30">
+                    {Object.entries(GEOGRAPHIC_CONTEXTS).map(([key, name]) => (
+                      <SelectItem key={key} value={key} className="text-white hover:bg-slate-700">
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* Additional Character Tags */}
