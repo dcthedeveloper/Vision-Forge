@@ -616,7 +616,7 @@ async def analyze_image(
         logger.error(f"Sophisticated analysis failed: {e}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
-async def create_sophisticated_character_analysis(image_data: bytes, filename: str, context: Dict) -> Dict[str, Any]:
+async def create_enhanced_character_analysis(image_data: bytes, filename: str, context: Dict) -> Dict[str, Any]:
     """Create Marcus-style sophisticated character analysis"""
     try:
         # Get origin and power source descriptions
