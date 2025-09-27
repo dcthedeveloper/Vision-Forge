@@ -120,6 +120,41 @@ const TropeRiskMeter = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Current Character Option */}
+          {hasActiveCharacter && (
+            <div className="mb-6 p-4 bg-indigo-900/20 rounded-lg border border-indigo-500/30">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <User className="w-4 h-4 text-indigo-400" />
+                  <span className="text-white font-medium">Current Character</span>
+                </div>
+                <Button
+                  onClick={() => analyzeTropeRisk(currentCharacter)}
+                  disabled={isLoading}
+                  className="bg-indigo-600 hover:bg-indigo-700"
+                >
+                  {isLoading && selectedCharacter === currentCharacter ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <TrendingUp className="w-4 h-4 mr-2" />
+                      Analyze Current
+                    </>
+                  )}
+                </Button>
+              </div>
+              <div className="text-sm text-indigo-200">
+                <div className="font-medium">{getCharacterName()}</div>
+                <div className="text-xs text-indigo-300">
+                  {currentCharacter?.character_origin || 'Unknown origin'} • {currentCharacter?.genre_universe || 'Unknown genre'}
+                </div>
+              </div>
+            </div>
+          )}
+          
           {analysisHistory.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               <Eye className="w-12 h-12 mx-auto mb-4 opacity-50" />
