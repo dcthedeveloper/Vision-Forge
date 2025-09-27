@@ -27,7 +27,7 @@ async def test_new_continuity_endpoint():
         }
         
         print("Testing new Phase 3A continuity endpoint...")
-        async with session.post(f"{BACKEND_URL}/check-continuity", 
+        async with session.post(f"{BACKEND_URL}/check-continuity-advanced", 
                               json=test_data,
                               headers={"Content-Type": "application/json"}) as response:
             print(f"Status: {response.status}")
