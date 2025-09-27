@@ -255,9 +255,10 @@ function App() {
             </div>
           } />
         </Routes>
-      </BrowserRouter>
-      <Toaster />
-    </div>
+        </BrowserRouter>
+        <Toaster />
+      </div>
+    </CharacterProvider>
   );
 }
 
