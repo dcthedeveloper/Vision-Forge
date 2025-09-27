@@ -1153,18 +1153,21 @@ class VisionForgeBackendTester:
         print(f"Failed: {total - passed}")
         print(f"Success Rate: {(passed/total)*100:.1f}%")
         
-        # Separate existing vs Phase 2 vs Power System results
-        existing_tests = [r for r in self.test_results if not any(feature in r["test"] for feature in ["Beat Sheet", "Trope Risk", "Power System"])]
+        # Separate existing vs Phase 2 vs Power System vs Phase 3A results
+        existing_tests = [r for r in self.test_results if not any(feature in r["test"] for feature in ["Beat Sheet", "Trope Risk", "Power System", "Continuity", "Enhanced Style", "Style Coach"])]
         phase2_tests = [r for r in self.test_results if any(phase2 in r["test"] for phase2 in ["Beat Sheet", "Trope Risk"])]
         power_system_tests = [r for r in self.test_results if "Power System" in r["test"]]
+        phase3a_tests = [r for r in self.test_results if any(phase3a in r["test"] for phase3a in ["Continuity", "Enhanced Style", "Style Coach"])]
         
         existing_passed = sum(1 for r in existing_tests if r["success"])
         phase2_passed = sum(1 for r in phase2_tests if r["success"])
         power_system_passed = sum(1 for r in power_system_tests if r["success"])
+        phase3a_passed = sum(1 for r in phase3a_tests if r["success"])
         
         print(f"\n📋 EXISTING FEATURES: {existing_passed}/{len(existing_tests)} passed")
         print(f"🆕 PHASE 2 FEATURES: {phase2_passed}/{len(phase2_tests)} passed")
         print(f"🔥 POWER SYSTEM FRAMEWORK: {power_system_passed}/{len(power_system_tests)} passed")
+        print(f"🎯 PHASE 3A FEATURES: {phase3a_passed}/{len(phase3a_tests)} passed")
         
         if total - passed > 0:
             print("\n❌ FAILED TESTS:")
