@@ -360,16 +360,10 @@ async def parse_json_response(response_text: str) -> Dict[str, Any]:
 async def get_multi_stage_analysis(image_data: bytes, image_filename: str, genre: Optional[str] = None) -> Dict[str, Any]:
     """Multi-stage analysis adapted for genre/universe"""
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
-        
         image_b64 = base64.b64encode(image_data).decode('utf-8')
-        image_content = ImageContent(image_base64=image_b64)
         
-        # Stage 1: Visual Extraction (unchanged)
-        stage1_chat = LlmChat(
-            api_key=os.environ['EMERGENT_LLM_KEY'],
-            session_id=f"stage1-{uuid.uuid4()}",
-            system_message="""Extract visual details only. No speculation about personality or powers.
+        # Stage 1: Visual Extraction using Ollama vision model
+        stage1_prompt = """Extract visual details only. No speculation about personality or powers.
             
 Return JSON:
 {
@@ -378,15 +372,12 @@ Return JSON:
   "setting": "Environment details",
   "pose_expression": "Body language and expression",
   "style_aesthetic": "Overall visual style"
-}"""
-        ).with_model("openai", "gpt-4o")
+}
+
+Extract visual details from this image."""
         
-        stage1_response = await stage1_chat.send_message(UserMessage(
-            text="Extract visual details from this image.",
-            file_contents=[image_content]
-        ))
-        
-        stage1_data = await parse_json_response(str(stage1_response))
+        stage1_response = await get_image_analysis(image_b64, stage1_prompt)
+        stage1_data = await parse_json_response(stage1_response)
         
         # Stage 2: Genre-Adapted Analysis
         if genre and genre in GENRES:
