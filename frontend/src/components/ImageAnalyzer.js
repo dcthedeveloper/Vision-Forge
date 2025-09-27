@@ -363,13 +363,16 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
             {/* Character Origin */}
             <div>
               <label className="block text-sm font-medium text-indigo-300 mb-2">
-                Character Origin
+                Character Origin {opMode && <span className="text-red-300">🔥 OP MODE</span>}
               </label>
               <Select value={characterOrigin} onValueChange={setCharacterOrigin}>
-                <SelectTrigger className="bg-slate-800 border-indigo-500/30 text-white">
+                <SelectTrigger className={`bg-slate-800 border-indigo-500/30 text-white ${
+                  opMode ? 'border-red-500/50 shadow-red-500/25' : ''
+                }`}>
                   <SelectValue placeholder="Select character origin" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-indigo-500/30">
+                  {/* Regular Origins */}
                   {Object.entries(CHARACTER_ORIGINS).map(([key, origin]) => (
                     <SelectItem key={key} value={key} className="text-white hover:bg-slate-700">
                       <div>
@@ -378,6 +381,23 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
                       </div>
                     </SelectItem>
                   ))}
+                  
+                  {/* OP Mode Origins */}
+                  {opMode && (
+                    <>
+                      <div className="px-2 py-1 text-xs text-red-300 border-t border-red-500/30 mt-1">
+                        🔥 BROKEN ORIGINS - NARRATIVE DESTROYING
+                      </div>
+                      {Object.entries(OP_CHARACTER_ORIGINS).map(([key, origin]) => (
+                        <SelectItem key={key} value={key} className="text-red-300 hover:bg-red-900/30">
+                          <div>
+                            <div className="font-medium">{origin.name}</div>
+                            <div className="text-xs text-red-200">{origin.description}</div>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
