@@ -1921,6 +1921,156 @@ def _generate_creative_applications(power_system) -> List[str]:
     
     return applications[:5]
 
+# Continuity Engine Endpoints
+@api_router.post("/check-continuity")
+async def check_continuity_endpoint(request: dict):
+    """Check content for continuity violations"""
+    try:
+        new_content = request.get("content", {})
+        context_characters = request.get("context_characters", [])
+        
+        continuity_engine = get_continuity_engine()
+        violations = continuity_engine.check_continuity(new_content, context_characters)
+        
+        # Convert violations to dict format
+        result = {
+            "total_violations": len(violations),
+            "critical_count": len([v for v in violations if v.severity.value == "critical"]),
+            "high_count": len([v for v in violations if v.severity.value == "high"]),
+            "medium_count": len([v for v in violations if v.severity.value == "medium"]),
+            "low_count": len([v for v in violations if v.severity.value == "low"]),
+            "violations": [
+                {
+                    "type": v.violation_type.value,
+                    "severity": v.severity.value,
+                    "title": v.title,
+                    "description": v.description,
+                    "affected_elements": v.affected_elements,
+                    "suggested_fixes": v.suggested_fixes,
+                    "examples": v.examples,
+                    "cross_references": v.cross_references
+                } for v in violations
+            ]
+        }
+        
+        return {"continuity_check": result, "success": True, "message": "Continuity analysis completed"}
+        
+    except Exception as e:
+        logger.error(f"Continuity check failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Continuity check failed: {str(e)}")
+
+@api_router.post("/add-to-continuity")
+async def add_to_continuity_database(request: dict):
+    """Add character analysis to continuity database"""
+    try:
+        character_data = request.get("character_data", {})
+        
+        continuity_engine = get_continuity_engine()
+        continuity_engine.add_character_analysis(character_data)
+        
+        return {"success": True, "message": "Character added to continuity database"}
+        
+    except Exception as e:
+        logger.error(f"Adding to continuity database failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to add to continuity database: {str(e)}")
+
+# Enhanced Style Coach Endpoints
+@api_router.post("/analyze-style-enhanced")
+async def analyze_style_enhanced_endpoint(request: dict):
+    """Enhanced style analysis with detailed rationale"""
+    try:
+        text = request.get("text", "")
+        focus_areas = request.get("focus_areas", [])
+        
+        if not text:
+            raise HTTPException(status_code=400, detail="Text content required")
+        
+        style_coach = get_enhanced_style_coach()
+        analysis = style_coach.analyze_text(text, focus_areas)
+        
+        # Convert to dict format
+        result = {
+            "overall_score": round(analysis.overall_score, 3),
+            "readability_score": round(analysis.readability_score, 3),
+            "engagement_score": round(analysis.engagement_score, 3),
+            "professionalism_score": round(analysis.professionalism_score, 3),
+            "total_issues": len(analysis.issues),
+            "critical_issues": len([i for i in analysis.issues if i.severity.value == "critical"]),
+            "high_issues": len([i for i in analysis.issues if i.severity.value == "high"]),
+            "medium_issues": len([i for i in analysis.issues if i.severity.value == "medium"]),
+            "low_issues": len([i for i in analysis.issues if i.severity.value == "low"]),
+            "issues": [
+                {
+                    "type": issue.issue_type.value,
+                    "severity": issue.severity.value,
+                    "title": issue.title,
+                    "explanation": issue.explanation,
+                    "problematic_text": issue.problematic_text,
+                    "suggested_revision": issue.suggested_revision,
+                    "reasoning": issue.reasoning,
+                    "examples": issue.examples,
+                    "position": issue.position,
+                    "learning_resources": issue.learning_resources
+                } for issue in analysis.issues
+            ],
+            "strengths": analysis.strengths,
+            "improvement_summary": analysis.improvement_summary,
+            "educational_notes": analysis.educational_notes
+        }
+        
+        return {"style_analysis": result, "success": True, "message": "Enhanced style analysis completed"}
+        
+    except Exception as e:
+        logger.error(f"Enhanced style analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Enhanced style analysis failed: {str(e)}")
+
+@api_router.get("/style-coach-help")
+async def get_style_coach_help():
+    """Get educational resources and help for style improvement"""
+    try:
+        style_coach = get_enhanced_style_coach()
+        
+        return {
+            "educational_resources": style_coach.educational_resources,
+            "issue_types": [
+                {
+                    "type": "cliche_language",
+                    "name": "Clichéd Language",
+                    "description": "Overused words and phrases that sound artificial"
+                },
+                {
+                    "type": "telling_not_showing",
+                    "name": "Telling vs Showing",
+                    "description": "Stating facts instead of showing through concrete details"
+                },
+                {
+                    "type": "passive_voice",
+                    "name": "Passive Voice",
+                    "description": "Constructions that make writing feel distant and unclear"
+                },
+                {
+                    "type": "weak_verbs",
+                    "name": "Weak Verbs",
+                    "description": "Generic verbs like 'was,' 'seems,' 'feels' that lack energy"
+                },
+                {
+                    "type": "filter_words",
+                    "name": "Filter Words",
+                    "description": "Words that create distance between reader and story"
+                },
+                {
+                    "type": "ai_telltales",
+                    "name": "AI Patterns",
+                    "description": "Phrases commonly generated by AI that sound artificial"
+                }
+            ],
+            "success": True
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get style coach help: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Initialize systems on startup
 @app.on_event("startup")
 async def startup_event():
