@@ -221,7 +221,7 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated, aiSettings = { 
         });
       }, 800);
 
-      // Use the original analyze-image endpoint with parameters
+      // Use the enhanced analyze-image endpoint with AI settings
       const params = new URLSearchParams({
         genre: selectedGenre,
         origin: characterOrigin,
@@ -230,7 +230,9 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated, aiSettings = { 
         evolution_stage: evolutionStage,
         geographic_context: geographicContext,
         tags: additionalTags.join(','),
-        op_mode: opMode ? 'true' : 'false'
+        op_mode: opMode ? 'true' : 'false',
+        ai_provider: aiSettings.provider || 'ollama',
+        safety_level: aiSettings.safetyLevel || 'moderate'
       });
 
       const response = await axios.post(`${API}/analyze-image?${params}`, formData, {
