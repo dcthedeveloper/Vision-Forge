@@ -434,11 +434,9 @@ Context to integrate:"""
         return {}
 
 # Keep existing helper functions
-async def get_text_generation(prompt: str, generation_type: str, style_preferences: Optional[Dict] = None) -> Dict[str, Any]:
-    """Generate text using Claude Sonnet 4"""
+async def get_creative_text_generation(prompt: str, generation_type: str, style_preferences: Optional[Dict] = None) -> Dict[str, Any]:
+    """Generate creative text using Ollama"""
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-        
         system_messages = {
             "character": "You are VisionForge's Character Creator. Create detailed, non-clichéd character profiles.",
             "story": "You are VisionForge's Story Architect. Craft engaging narratives that subvert expectations.",
@@ -446,22 +444,18 @@ async def get_text_generation(prompt: str, generation_type: str, style_preferenc
             "dialogue": "You are VisionForge's Dialogue Specialist. Write authentic character conversations."
         }
         
-        chat = LlmChat(
-            api_key=os.environ['EMERGENT_LLM_KEY'],
-            session_id=f"text-gen-{uuid.uuid4()}",
-            system_message=system_messages.get(generation_type, system_messages["character"])
-        ).with_model("anthropic", "claude-sonnet-4-20250514")
+        system_message = system_messages.get(generation_type, system_messages["character"])
+        enhanced_prompt = f"{system_message}\n\nCreate {generation_type}: {prompt}\n\nStyle: {style_preferences or 'Authentic, avoiding clichés'}"
         
-        enhanced_prompt = f"Create {generation_type}: {prompt}\n\nStyle: {style_preferences or 'Authentic, avoiding clichés'}"
-        response = await chat.send_message(UserMessage(text=enhanced_prompt))
+        response = await ollama_text_generation(enhanced_prompt, temperature=0.8)
         
-        response_text = str(response)
+        # Simple cliche detection
         cliche_indicators = ["chosen one", "ancient prophecy", "dark past", "mysterious stranger", "kinesis", "manipulation"]
-        cliche_count = sum(1 for indicator in cliche_indicators if indicator.lower() in response_text.lower())
+        cliche_count = sum(1 for indicator in cliche_indicators if indicator.lower() in response.lower())
         cliche_score = min(cliche_count * 0.1, 1.0)
         
         return {
-            "generated_text": response_text,
+            "generated_text": response,
             "cliche_score": cliche_score,
             "suggestions": ["Consider more specific details", "Avoid common tropes"] if cliche_score > 0.3 else []
         }
