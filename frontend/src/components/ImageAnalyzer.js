@@ -439,26 +439,39 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
               </div>
 
               {/* Selected Configuration Summary */}
-              <div className="bg-slate-800/50 rounded-lg p-3">
-                <h4 className="text-sm font-medium text-indigo-300 mb-2">Selected Configuration:</h4>
-                <div className="flex flex-wrap gap-1">
-                  <Badge variant="outline" className="text-indigo-300 border-indigo-500/50">
-                    {GENRES[selectedGenre]}
-                  </Badge>
-                  <Badge variant="outline" className="text-purple-300 border-purple-500/50">
-                    {CHARACTER_ORIGINS[characterOrigin].name}
-                  </Badge>
-                  <Badge variant="outline" className="text-green-300 border-green-500/50">
-                    {SOCIAL_STATUS[socialStatus]}
-                  </Badge>
-                  <Badge variant="outline" className="text-yellow-300 border-yellow-500/50">
-                    {POWER_SOURCES[powerSource]}
-                  </Badge>
-                  {additionalTags.map((tag) => (
-                    <Badge key={tag} variant="outline" className="text-pink-300 border-pink-500/50 text-xs">
-                      {tag}
-                    </Badge>
-                  ))}
+              <div className="bg-slate-800/50 rounded-lg p-4">
+                <h4 className="text-sm font-medium text-indigo-300 mb-3">Marcus-Style Character Configuration:</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="text-indigo-300 font-medium">Universe:</span> {GENRES[selectedGenre]}
+                  </div>
+                  <div>
+                    <span className="text-indigo-300 font-medium">Origin:</span> {CHARACTER_ORIGINS[characterOrigin].name}
+                  </div>
+                  <div>
+                    <span className="text-indigo-300 font-medium">Status:</span> {SOCIAL_STATUS[socialStatus]}
+                  </div>
+                  <div>
+                    <span className="text-indigo-300 font-medium">Power Source:</span> {POWER_SOURCES[powerSource]}
+                  </div>
+                  <div>
+                    <span className="text-indigo-300 font-medium">Evolution:</span> {POWER_EVOLUTION_STAGES[evolutionStage]}
+                  </div>
+                  <div>
+                    <span className="text-indigo-300 font-medium">Location:</span> {GEOGRAPHIC_CONTEXTS[geographicContext]}
+                  </div>
+                  {additionalTags.length > 0 && (
+                    <div className="md:col-span-2">
+                      <span className="text-indigo-300 font-medium">Archetypes:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {additionalTags.map((tag) => (
+                          <Badge key={tag} variant="outline" className="text-pink-300 border-pink-500/50 text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
