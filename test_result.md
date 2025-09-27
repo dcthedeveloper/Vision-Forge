@@ -136,28 +136,28 @@ backend:
         - comment: "VERIFIED: Image analysis endpoint fully migrated to Ollama. LLaVA 7B vision model successfully analyzing images and generating complete character profiles with traits, powers, backstory seeds, and persona summaries. Multi-stage analysis working with Ollama vision + text models. 16 existing analyses in database confirm functionality."
 
   - task: "Beat-Sheet Generator Implementation"
-    implemented: false
-    working: "NA"
-    file: "beat_sheet_generator.py"
+    implemented: true
+    working: true
+    file: "beat_sheet_generator.py, server.py, BeatSheetGenerator.js"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
-        - working: "NA"
+        - working: true
         - agent: "main"
-        - comment: "Phase 2 feature - needs implementation with Ollama backend for narrative structure generation."
+        - comment: "COMPLETED: Beat Sheet Generator fully implemented. Backend has comprehensive beat sheet templates (Save the Cat, Dan Harmon, Three-Act, Hero's Journey, Kishōtenketsu) with Ollama AI enhancement for character-specific adaptations. Frontend component with character selection, configuration panel, and beat visualization. API endpoints: /api/generate-beat-sheet, /api/beat-sheet-types."
 
   - task: "Enhanced Trope Risk Meter"
-    implemented: false
-    working: "NA"
-    file: "enhanced_trope_meter.py"
+    implemented: true
+    working: true
+    file: "enhanced_trope_meter.py, server.py, TropeRiskMeter.js"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: false
+    needs_retesting: true
     status_history:
-        - working: "NA"
+        - working: true
         - agent: "main"
-        - comment: "Phase 2 feature - real-time freshness scoring with Ollama integration."
+        - comment: "COMPLETED: Enhanced Trope Risk Meter fully implemented. Comprehensive trope database with cliché scoring, Marcus-style sophistication detection, and Ollama AI-enhanced improvement suggestions. Frontend with character selection, detailed trope analysis, and visual risk assessment. API endpoint: /api/analyze-trope-risk."
 
 frontend:
   - task: "UI Compatibility with Ollama Backend"
