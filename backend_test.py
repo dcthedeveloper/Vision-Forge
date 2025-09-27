@@ -1140,6 +1140,16 @@ class VisionForgeBackendTester:
         await self.test_enhanced_style_analysis()
         await self.test_style_coach_help()
         
+        print("\n🔄 CHARACTER PERSISTENCE & SESSION MANAGEMENT:")
+        # Run Character Persistence tests
+        await self.test_character_persistence_workflow()
+        await self.test_character_save()
+        await self.test_character_current()
+        await self.test_character_update()
+        await self.test_character_history()
+        await self.test_character_rollback()
+        await self.test_image_analysis_auto_save()
+        
         # Summary
         print("\n" + "=" * 60)
         print("📊 TEST SUMMARY")
