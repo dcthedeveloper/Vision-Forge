@@ -9,6 +9,9 @@ import { Loader2, FileText, Zap, BookOpen, Clock, User } from 'lucide-react';
 import { useCharacter } from '../contexts/CharacterContext';
 
 const BeatSheetGenerator = () => {
+  // Character context for cross-tool character access
+  const { currentCharacter, hasActiveCharacter, getCharacterName } = useCharacter();
+  
   const [beatSheetTypes, setBeatSheetTypes] = useState([]);
   const [tonePacing, setTonePacing] = useState([]);
   const [selectedSheetType, setSelectedSheetType] = useState('');
@@ -18,6 +21,7 @@ const BeatSheetGenerator = () => {
   const [generatedBeatSheet, setGeneratedBeatSheet] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [analysisHistory, setAnalysisHistory] = useState([]);
+  const [useCurrentCharacter, setUseCurrentCharacter] = useState(true);
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 
