@@ -49,7 +49,7 @@ class Phase3ATester:
                 "content_type": "general"
             }
             
-            async with self.session.post(f"{BACKEND_URL}/check-continuity",
+            async with self.session.post(f"{BACKEND_URL}/check-continuity-advanced",
                                        json=basic_test,
                                        headers={"Content-Type": "application/json"}) as response:
                 if response.status == 200:
