@@ -2109,6 +2109,288 @@ async def startup_event():
     
     logger.info("🚀 VisionForge enhanced systems ready!")
 
+# Character Persistence & Session Management API Endpoints
+class CharacterSessionRequest(BaseModel):
+    character_data: Dict[str, Any]
+    prompt_context: Dict[str, Any]
+    tool_name: str
+    description: Optional[str] = "Character update"
+
+class CharacterUpdateRequest(BaseModel):
+    character_data: Dict[str, Any]
+    tool_name: str
+    description: Optional[str] = "Character modification"
+
+@api_router.post("/character/save")
+async def save_character_session(request: CharacterSessionRequest):
+    """Save character data to global session for cross-tool persistence"""
+    try:
+        # Get version control engine
+        vc_engine = get_version_control_engine()
+        
+        # Create prompt context for version tracking
+        prompt_context = PromptContext(
+            prompt_text=request.prompt_context.get("prompt_text", ""),
+            ai_provider=request.prompt_context.get("ai_provider", "ollama"),
+            model_name=request.prompt_context.get("model_name", "llava:7b"),
+            temperature=request.prompt_context.get("temperature", 0.7),
+            safety_level=request.prompt_context.get("safety_level", "moderate"),
+            genre=request.prompt_context.get("genre"),
+            character_context=request.character_data,
+            additional_parameters={
+                "tool_name": request.tool_name,
+                "session_id": request.character_data.get("id", str(uuid.uuid4()))
+            }
+        )
+        
+        # Check if this is a new character or existing one
+        character_id = request.character_data.get("id")
+        if character_id:
+            # Check if we already have this character in version control
+            existing_session = await db.character_sessions.find_one({"character_id": character_id})
+            if existing_session:
+                # Create new version of existing character
+                content_id = existing_session["content_id"]
+                lineage = vc_engine.lineages.get(content_id)
+                if lineage:
+                    version_id = vc_engine.create_new_version(
+                        parent_version_id=lineage.current_version_id,
+                        content_data=request.character_data,
+                        prompt_context=prompt_context,
+                        change_type=ChangeType.MODIFICATION,
+                        description=f"{request.description} from {request.tool_name}"
+                    )
+                else:
+                    # Create initial version if lineage doesn't exist
+                    content_id, version_id = vc_engine.create_initial_version(
+                        content_type=ContentType.CHARACTER_ANALYSIS,
+                        content_data=request.character_data,
+                        prompt_context=prompt_context,
+                        description=f"Initial character from {request.tool_name}"
+                    )
+            else:
+                # Create initial version for new character
+                content_id, version_id = vc_engine.create_initial_version(
+                    content_type=ContentType.CHARACTER_ANALYSIS,
+                    content_data=request.character_data,
+                    prompt_context=prompt_context,
+                    description=f"Initial character from {request.tool_name}"
+                )
+        else:
+            # Create completely new character
+            character_id = str(uuid.uuid4())
+            request.character_data["id"] = character_id
+            
+            content_id, version_id = vc_engine.create_initial_version(
+                content_type=ContentType.CHARACTER_ANALYSIS,
+                content_data=request.character_data,
+                prompt_context=prompt_context,
+                description=f"Initial character from {request.tool_name}"
+            )
+        
+        # Save or update character session in MongoDB
+        session_data = {
+            "character_id": character_id,
+            "content_id": content_id,
+            "current_version_id": version_id,
+            "character_data": request.character_data,
+            "last_tool": request.tool_name,
+            "updated_at": datetime.utcnow().isoformat(),
+            "created_at": datetime.utcnow().isoformat()
+        }
+        
+        await db.character_sessions.update_one(
+            {"character_id": character_id},
+            {"$set": session_data},
+            upsert=True
+        )
+        
+        logger.info(f"Character session saved: {character_id} from {request.tool_name}")
+        
+        return {
+            "success": True,
+            "character_id": character_id,
+            "content_id": content_id,
+            "version_id": version_id,
+            "message": "Character saved to session"
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to save character session: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save character: {str(e)}")
+
+@api_router.get("/character/current")
+async def get_current_character():
+    """Get the current active character session"""
+    try:
+        # Get the most recently updated character session
+        session = await db.character_sessions.find_one(
+            {},
+            sort=[("updated_at", -1)]
+        )
+        
+        if not session:
+            return {
+                "success": False,
+                "character": None,
+                "message": "No active character session"
+            }
+        
+        # Remove MongoDB _id
+        if '_id' in session:
+            del session['_id']
+        
+        return {
+            "success": True,
+            "character": session["character_data"],
+            "character_id": session["character_id"],
+            "last_tool": session["last_tool"],
+            "updated_at": session["updated_at"],
+            "message": "Current character retrieved"
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get current character: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get current character: {str(e)}")
+
+@api_router.put("/character/update")
+async def update_character_session(request: CharacterUpdateRequest):
+    """Update current character data from any tool"""
+    try:
+        # Get the current active character
+        current_session = await db.character_sessions.find_one(
+            {},
+            sort=[("updated_at", -1)]
+        )
+        
+        if not current_session:
+            raise HTTPException(status_code=404, detail="No active character session to update")
+        
+        character_id = current_session["character_id"]
+        
+        # Get version control engine
+        vc_engine = get_version_control_engine()
+        
+        # Create prompt context for the update
+        prompt_context = PromptContext(
+            prompt_text=f"Character updated from {request.tool_name}",
+            ai_provider="user_modification",
+            model_name="manual",
+            temperature=0.0,
+            safety_level="moderate",
+            character_context=request.character_data,
+            additional_parameters={
+                "tool_name": request.tool_name,
+                "session_id": character_id
+            }
+        )
+        
+        # Create new version
+        content_id = current_session["content_id"]
+        version_id = vc_engine.create_new_version(
+            parent_version_id=current_session["current_version_id"],
+            content_data=request.character_data,
+            prompt_context=prompt_context,
+            change_type=ChangeType.MODIFICATION,
+            description=f"{request.description} from {request.tool_name}"
+        )
+        
+        # Update session in MongoDB
+        await db.character_sessions.update_one(
+            {"character_id": character_id},
+            {"$set": {
+                "character_data": request.character_data,
+                "current_version_id": version_id,
+                "last_tool": request.tool_name,
+                "updated_at": datetime.utcnow().isoformat()
+            }}
+        )
+        
+        logger.info(f"Character updated: {character_id} from {request.tool_name}")
+        
+        return {
+            "success": True,
+            "character_id": character_id,
+            "version_id": version_id,
+            "message": "Character updated successfully"
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to update character: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update character: {str(e)}")
+
+@api_router.get("/character/history/{character_id}")
+async def get_character_history(character_id: str):
+    """Get version history for a specific character"""
+    try:
+        # Get session
+        session = await db.character_sessions.find_one({"character_id": character_id})
+        if not session:
+            raise HTTPException(status_code=404, detail="Character not found")
+        
+        # Get version control engine
+        vc_engine = get_version_control_engine()
+        
+        # Get lineage
+        content_id = session["content_id"]
+        lineage_data = vc_engine.get_version_lineage(content_id)
+        
+        return {
+            "success": True,
+            "character_id": character_id,
+            "lineage": lineage_data,
+            "message": "Character history retrieved"
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to get character history: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get character history: {str(e)}")
+
+@api_router.post("/character/rollback/{character_id}/{version_id}")
+async def rollback_character(character_id: str, version_id: str):
+    """Rollback character to a previous version"""
+    try:
+        # Get session
+        session = await db.character_sessions.find_one({"character_id": character_id})
+        if not session:
+            raise HTTPException(status_code=404, detail="Character not found")
+        
+        # Get version control engine
+        vc_engine = get_version_control_engine()
+        
+        # Rollback to specified version
+        content_id = session["content_id"]
+        new_version_id = vc_engine.rollback_to_version(
+            target_version_id=version_id,
+            description=f"Rollback to version {version_id}"
+        )
+        
+        # Get the rolled back character data
+        new_version = vc_engine.get_version(new_version_id)
+        
+        # Update session
+        await db.character_sessions.update_one(
+            {"character_id": character_id},
+            {"$set": {
+                "character_data": new_version.content_data,
+                "current_version_id": new_version_id,
+                "last_tool": "rollback",
+                "updated_at": datetime.utcnow().isoformat()
+            }}
+        )
+        
+        return {
+            "success": True,
+            "character_id": character_id,
+            "new_version_id": new_version_id,
+            "character_data": new_version.content_data,
+            "message": "Character rolled back successfully"
+        }
+        
+    except Exception as e:
+        logger.error(f"Failed to rollback character: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to rollback character: {str(e)}")
+
 @api_router.get("/analyses")
 async def get_character_analyses():
     """Get all character analyses"""
