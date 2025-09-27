@@ -13,6 +13,7 @@ from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime
 import asyncio
+import re
 
 # Import our new foundational systems
 from knowledge_graph import get_knowledge_graph, initialize_knowledge_graph
