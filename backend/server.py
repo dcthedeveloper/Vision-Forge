@@ -184,13 +184,6 @@ Be specific and detailed. Focus on what you actually see in the image - clothing
                     "persona_summary": f"Character analysis encountered parsing issues. Raw response available in traits."
                 }
         
-        finally:
-            # Clean up temp file
-            try:
-                os.unlink(temp_path)
-            except:
-                pass
-            
     except Exception as e:
         logger.error(f"Vision analysis failed: {e}")
         raise HTTPException(status_code=500, detail=f"Vision analysis failed: {str(e)}")
