@@ -7,8 +7,9 @@ import { Textarea } from "./ui/textarea";
 import { Progress } from "./ui/progress";
 import { Separator } from "./ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Checkbox } from "./ui/checkbox";
 import { toast } from "sonner";
-import { Upload, ImageIcon, Sparkles, Zap, Eye, Plus, ArrowRight } from "lucide-react";
+import { Upload, ImageIcon, Sparkles, Zap, Eye, Plus, ArrowRight, Settings } from "lucide-react";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
@@ -24,14 +25,66 @@ const GENRES = {
   "urban_realistic": "Urban Realistic"
 };
 
+const CHARACTER_ORIGINS = {
+  "human": { name: "Human", description: "Baseline human with no supernatural abilities" },
+  "metahuman": { name: "Metahuman", description: "Human with acquired supernatural abilities" },
+  "mutant": { name: "Mutant", description: "Born with genetic mutations granting powers" },
+  "alien": { name: "Alien", description: "Extraterrestrial being with natural abilities" },
+  "inhuman": { name: "Inhuman", description: "Genetically modified human subspecies" },
+  "super_soldier": { name: "Super Soldier", description: "Enhanced through military experiments" },
+  "tech_based": { name: "Tech-Based", description: "Powers derived from advanced technology" },
+  "genetically_modified": { name: "Genetically Modified", description: "Artificially altered genetics" },
+  "magic_user": { name: "Magic User", description: "Powers from mystical/supernatural sources" },
+  "cosmic_entity": { name: "Cosmic Entity", description: "Being of cosmic or divine nature" },
+  "android": { name: "Android/Cyborg", description: "Artificial being or human-machine hybrid" },
+  "enhanced_human": { name: "Enhanced Human", description: "Human with augmented abilities" }
+};
+
+const SOCIAL_STATUS = {
+  "wealthy": "Wealthy Elite",
+  "middle_class": "Middle Class", 
+  "working_class": "Working Class",
+  "street_level": "Street Level",
+  "royalty": "Royalty/Nobility",
+  "corporate": "Corporate Executive",
+  "military": "Military/Government",
+  "criminal": "Criminal Underworld",
+  "academic": "Academic/Scientist",
+  "celebrity": "Public Figure/Celebrity"
+};
+
+const POWER_SOURCES = {
+  "innate": "Born with Powers",
+  "accident": "Freak Accident", 
+  "experiment": "Scientific Experiment",
+  "training": "Intensive Training",
+  "technology": "Advanced Technology",
+  "magic": "Mystical/Magical",
+  "cosmic": "Cosmic Event",
+  "divine": "Divine/Religious",
+  "alien_tech": "Alien Technology",
+  "mutation": "Genetic Mutation"
+};
+
 const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedGenre, setSelectedGenre] = useState("urban_realistic");
+  const [characterOrigin, setCharacterOrigin] = useState("human");
+  const [socialStatus, setSocialStatus] = useState("middle_class");
+  const [powerSource, setPowerSource] = useState("innate");
+  const [additionalTags, setAdditionalTags] = useState([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [currentCharacter, setCurrentCharacter] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
+
+  const ADDITIONAL_TAGS = [
+    "Anti-Hero", "Villain", "Morally Grey", "Reluctant Hero", "Team Leader",
+    "Loner", "Mentor Figure", "Rookie", "Veteran", "Reformed Criminal",
+    "Double Agent", "Vigilante", "Government Agent", "Rebel", "Pacifist"
+  ];
 
   const handleFileSelect = useCallback((event) => {
     const file = event.target.files[0];
@@ -70,6 +123,14 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
     event.preventDefault();
   }, []);
 
+  const handleTagToggle = (tag) => {
+    setAdditionalTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
   const analyzeImage = async () => {
     if (!selectedFile) {
       toast.error("Please select an image first");
@@ -84,9 +145,6 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
     try {
       const formData = new FormData();
       formData.append('file', selectedFile);
-      if (selectedGenre) {
-        formData.append('genre', selectedGenre);
-      }
 
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
@@ -94,24 +152,33 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
             clearInterval(progressInterval);
             return 90;
           }
-          return prev + 10;
+          return prev + 15;
         });
-      }, 500);
+      }, 800);
 
-      const response = await axios.post(`${API}/analyze-image`, formData, {
+      // Use the original analyze-image endpoint with parameters
+      const params = new URLSearchParams({
+        genre: selectedGenre,
+        origin: characterOrigin,
+        social_status: socialStatus,
+        power_source: powerSource,
+        tags: additionalTags.join(',')
+      });
+
+      const response = await axios.post(`${API}/analyze-image?${params}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        timeout: 120000,
-        params: selectedGenre ? { genre: selectedGenre } : {}
+        timeout: 90000
       });
 
       clearInterval(progressInterval);
       setUploadProgress(100);
 
-      if (response.data.success) {
-        setAnalysis(response.data);
-        setCurrentCharacter(response.data.character);
+      if (response.data.success || response.data.analysis) {
+        const analysisData = response.data.analysis || response.data;
+        setAnalysis(analysisData);
+        setCurrentCharacter(analysisData);
         onAnalysisComplete?.();
-        onCharacterCreated?.(response.data.character);
+        onCharacterCreated?.(analysisData);
         toast.success("Character analysis completed!");
       } else {
         throw new Error(response.data.message || "Analysis failed");
@@ -129,31 +196,12 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
     }
   };
 
-  const enhanceCharacter = async (enhancementType) => {
-    if (!currentCharacter) return;
-    
-    try {
-      const response = await axios.post(`${API}/enhance-character`, {
-        character_id: currentCharacter.id,
-        enhancement_type: enhancementType
-      });
-      
-      if (response.data.success) {
-        toast.success(`Character ${enhancementType.replace('_', ' ')} added!`);
-        // Refresh character data
-        const updatedChar = await axios.get(`${API}/character/${currentCharacter.id}`);
-        setCurrentCharacter(updatedChar.data);
-      }
-    } catch (error) {
-      toast.error(`Failed to enhance character: ${error.message}`);
-    }
-  };
-
   const resetAnalysis = () => {
     setSelectedFile(null);
     setAnalysis(null);
     setCurrentCharacter(null);
     setPreviewUrl(null);
+    setAdditionalTags([]);
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
     }
@@ -181,31 +229,160 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
             Upload Character Image
           </CardTitle>
           <CardDescription className="text-indigo-200">
-            Upload artwork and select genre/universe for tailored analysis
+            Upload artwork and customize character parameters for detailed analysis
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Genre Selection */}
-          <div>
-            <label className="block text-sm font-medium text-indigo-300 mb-2">
-              Genre/Universe
-            </label>
-            <Select value={selectedGenre} onValueChange={setSelectedGenre}>
-              <SelectTrigger className="bg-slate-800 border-indigo-500/30 text-white">
-                <SelectValue placeholder="Select genre/universe" />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-800 border-indigo-500/30">
-                {Object.entries(GENRES).map(([key, name]) => (
-                  <SelectItem key={key} value={key} className="text-white hover:bg-slate-700">
-                    {name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-slate-400 mt-1">
-              Powers and backstory will be adapted to fit the selected universe
-            </p>
+        <CardContent className="space-y-6">
+          {/* Basic Settings */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Genre Selection */}
+            <div>
+              <label className="block text-sm font-medium text-indigo-300 mb-2">
+                Genre/Universe
+              </label>
+              <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+                <SelectTrigger className="bg-slate-800 border-indigo-500/30 text-white">
+                  <SelectValue placeholder="Select genre/universe" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-indigo-500/30">
+                  {Object.entries(GENRES).map(([key, name]) => (
+                    <SelectItem key={key} value={key} className="text-white hover:bg-slate-700">
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Character Origin */}
+            <div>
+              <label className="block text-sm font-medium text-indigo-300 mb-2">
+                Character Origin
+              </label>
+              <Select value={characterOrigin} onValueChange={setCharacterOrigin}>
+                <SelectTrigger className="bg-slate-800 border-indigo-500/30 text-white">
+                  <SelectValue placeholder="Select character origin" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-indigo-500/30">
+                  {Object.entries(CHARACTER_ORIGINS).map(([key, origin]) => (
+                    <SelectItem key={key} value={key} className="text-white hover:bg-slate-700">
+                      <div>
+                        <div className="font-medium">{origin.name}</div>
+                        <div className="text-xs text-slate-400">{origin.description}</div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          {/* Advanced Settings Toggle */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+              className="border-indigo-500/50 text-indigo-300 hover:bg-indigo-500/10"
+            >
+              <Settings className="w-4 h-4 mr-2" />
+              {showAdvanced ? "Hide" : "Show"} Advanced Options
+            </Button>
+          </div>
+
+          {/* Advanced Settings */}
+          {showAdvanced && (
+            <div className="space-y-4 p-4 bg-slate-700/30 rounded-lg border border-indigo-500/20">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Social Status */}
+                <div>
+                  <label className="block text-sm font-medium text-indigo-300 mb-2">
+                    Social Status
+                  </label>
+                  <Select value={socialStatus} onValueChange={setSocialStatus}>
+                    <SelectTrigger className="bg-slate-800 border-indigo-500/30 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-indigo-500/30">
+                      {Object.entries(SOCIAL_STATUS).map(([key, name]) => (
+                        <SelectItem key={key} value={key} className="text-white hover:bg-slate-700">
+                          {name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Power Source */}
+                <div>
+                  <label className="block text-sm font-medium text-indigo-300 mb-2">
+                    Power Source
+                  </label>
+                  <Select value={powerSource} onValueChange={setPowerSource}>
+                    <SelectTrigger className="bg-slate-800 border-indigo-500/30 text-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-indigo-500/30">
+                      {Object.entries(POWER_SOURCES).map(([key, name]) => (
+                        <SelectItem key={key} value={key} className="text-white hover:bg-slate-700">
+                          {name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Additional Character Tags */}
+              <div>
+                <label className="block text-sm font-medium text-indigo-300 mb-3">
+                  Character Archetype Tags
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {ADDITIONAL_TAGS.map((tag) => (
+                    <div key={tag} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={tag}
+                        checked={additionalTags.includes(tag)}
+                        onCheckedChange={() => handleTagToggle(tag)}
+                        className="border-indigo-500/50 data-[state=checked]:bg-indigo-600"
+                      />
+                      <label 
+                        htmlFor={tag} 
+                        className="text-sm text-slate-300 cursor-pointer"
+                      >
+                        {tag}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Selected Configuration Summary */}
+              <div className="bg-slate-800/50 rounded-lg p-3">
+                <h4 className="text-sm font-medium text-indigo-300 mb-2">Selected Configuration:</h4>
+                <div className="flex flex-wrap gap-1">
+                  <Badge variant="outline" className="text-indigo-300 border-indigo-500/50">
+                    {GENRES[selectedGenre]}
+                  </Badge>
+                  <Badge variant="outline" className="text-purple-300 border-purple-500/50">
+                    {CHARACTER_ORIGINS[characterOrigin].name}
+                  </Badge>
+                  <Badge variant="outline" className="text-green-300 border-green-500/50">
+                    {SOCIAL_STATUS[socialStatus]}
+                  </Badge>
+                  <Badge variant="outline" className="text-yellow-300 border-yellow-500/50">
+                    {POWER_SOURCES[powerSource]}
+                  </Badge>
+                  {additionalTags.map((tag) => (
+                    <Badge key={tag} variant="outline" className="text-pink-300 border-pink-500/50 text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Upload Area */}
           <div 
@@ -267,7 +444,7 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
               <div className="flex items-center gap-2 text-indigo-300">
                 <Sparkles className="w-4 h-4 animate-spin" />
                 <span className="text-sm font-medium">
-                  Analyzing for {GENRES[selectedGenre]} universe...
+                  Analyzing {CHARACTER_ORIGINS[characterOrigin].name} for {GENRES[selectedGenre]}...
                 </span>
               </div>
               <Progress value={uploadProgress} className="w-full" />
@@ -290,7 +467,7 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
               ) : (
                 <>
                   <Eye className="w-4 h-4 mr-2" />
-                  Analyze for {GENRES[selectedGenre]}
+                  Analyze {CHARACTER_ORIGINS[characterOrigin].name}
                 </>
               )}
             </Button>
@@ -307,66 +484,26 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
                 <Sparkles className="w-5 h-5 text-indigo-400" />
                 Character Profile Created
               </CardTitle>
-              <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
-                {GENRES[selectedGenre]}
-              </Badge>
+              <div className="flex gap-2">
+                <Badge className="bg-indigo-500/20 text-indigo-300 border-indigo-500/30">
+                  {GENRES[selectedGenre]}
+                </Badge>
+                <Badge className="bg-purple-500/20 text-purple-300 border-purple-500/30">
+                  {CHARACTER_ORIGINS[characterOrigin].name}
+                </Badge>
+              </div>
             </div>
             <CardDescription className="text-indigo-200">
-              AI-generated character analysis adapted for {GENRES[selectedGenre]} universe
+              {CHARACTER_ORIGINS[characterOrigin].name} character adapted for {GENRES[selectedGenre]} universe
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Enhancement Tools Integration */}
-            <div className="bg-gradient-to-r from-green-900/20 to-blue-900/20 rounded-lg p-4 border border-green-500/30">
-              <h3 className="text-lg font-semibold text-green-300 mb-3 flex items-center gap-2">
-                <Plus className="w-5 h-5" />
-                Enhance with VisionForge Tools
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => enhanceCharacter("expand_backstory")}
-                  className="border-green-500/50 text-green-300 hover:bg-green-500/10"
-                  data-testid="enhance-backstory"
-                >
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                  Expand Backstory
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => enhanceCharacter("add_dialogue")}
-                  className="border-blue-500/50 text-blue-300 hover:bg-blue-500/10"
-                  data-testid="enhance-dialogue"
-                >
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                  Add Dialogue
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => enhanceCharacter("trope_analysis")}
-                  className="border-purple-500/50 text-purple-300 hover:bg-purple-500/10"
-                  data-testid="enhance-tropes"
-                >
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                  Analyze Tropes
-                </Button>
-              </div>
-              <p className="text-sm text-slate-400 mt-2">
-                Use other VisionForge tools to refine and develop this character further
-              </p>
-            </div>
-
             {/* Character Summary */}
             <div className="analysis-summary">
               <h3 className="text-lg font-semibold text-indigo-300 mb-3">Character Summary</h3>
               <p className="text-indigo-100 leading-relaxed" data-testid="persona-summary">
                 {currentCharacter.persona_summary}
               </p>
-              {currentCharacter.genre_context && (
-                <p className="text-sm text-indigo-300 mt-3 italic">
-                  <strong>Universe Context:</strong> {currentCharacter.genre_context}
-                </p>
-              )}
             </div>
 
             {/* Mood */}
@@ -430,7 +567,7 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
             <div>
               <h3 className="text-lg font-semibold text-indigo-300 mb-4 flex items-center gap-2">
                 <Zap className="w-5 h-5" />
-                {GENRES[selectedGenre]} Power Suggestions
+                {CHARACTER_ORIGINS[characterOrigin].name} Powers ({POWER_SOURCES[powerSource]})
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {currentCharacter.power_suggestions.map((power, index) => (
@@ -446,11 +583,6 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
                       </Badge>
                     </div>
                     <p className="text-slate-300 text-sm mb-3">{power.description}</p>
-                    {power.universe_context && (
-                      <p className="text-xs text-indigo-300 mb-2">
-                        <strong>Universe Context:</strong> {power.universe_context}
-                      </p>
-                    )}
                     <div className="bg-red-900/20 rounded px-3 py-2">
                       <p className="text-xs text-red-300">
                         <strong>Limitations:</strong> {power.limitations}
@@ -461,15 +593,27 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
               </div>
             </div>
 
-            {/* Creation Stages */}
+            {/* Character Classification Summary */}
             <div className="bg-slate-700/30 rounded-lg p-4">
-              <h4 className="text-sm font-medium text-slate-300 mb-2">Creation Stages Completed</h4>
-              <div className="flex flex-wrap gap-2">
-                {currentCharacter.creation_stages.map((stage, index) => (
-                  <Badge key={index} variant="outline" className="text-slate-400 border-slate-500">
-                    {stage.replace('_', ' ')}
-                  </Badge>
-                ))}
+              <h4 className="text-sm font-medium text-slate-300 mb-3">Character Classification</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-indigo-300 font-medium">Origin:</span> {CHARACTER_ORIGINS[characterOrigin].name}
+                </div>
+                <div>
+                  <span className="text-indigo-300 font-medium">Social Status:</span> {SOCIAL_STATUS[socialStatus]}
+                </div>
+                <div>
+                  <span className="text-indigo-300 font-medium">Power Source:</span> {POWER_SOURCES[powerSource]}
+                </div>
+                <div>
+                  <span className="text-indigo-300 font-medium">Universe:</span> {GENRES[selectedGenre]}
+                </div>
+                {additionalTags.length > 0 && (
+                  <div className="md:col-span-2">
+                    <span className="text-indigo-300 font-medium">Archetypes:</span> {additionalTags.join(", ")}
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>
