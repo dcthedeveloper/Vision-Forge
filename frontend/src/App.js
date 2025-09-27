@@ -1,52 +1,88 @@
-import { useEffect } from "react";
-import "@/App.css";
+import React, { useState, useCallback } from "react";
+import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
+import { Toaster } from "./components/ui/sonner";
+import { toast } from "sonner";
+import ImageAnalyzer from "./components/ImageAnalyzer";
+import AnalysisHistory from "./components/AnalysisHistory";
+import { Button } from "./components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+function App() {
+  const [activeTab, setActiveTab] = useState("analyzer");
+  const [refreshHistory, setRefreshHistory] = useState(0);
 
-const Home = () => {
-  const helloWorldApi = async () => {
-    try {
-      const response = await axios.get(`${API}/`);
-      console.log(response.data.message);
-    } catch (e) {
-      console.error(e, `errored out requesting / api`);
-    }
-  };
-
-  useEffect(() => {
-    helloWorldApi();
+  const handleAnalysisComplete = useCallback(() => {
+    setRefreshHistory(prev => prev + 1);
+    toast.success("Character analysis completed!");
   }, []);
 
   return (
-    <div>
-      <header className="App-header">
-        <a
-          className="App-link"
-          href="https://emergent.sh"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <img src="https://avatars.githubusercontent.com/in/1201222?s=120&u=2686cf91179bbafbc7a71bfbc43004cf9ae1acea&v=4" />
-        </a>
-        <p className="mt-5">Building something incredible ~!</p>
-      </header>
-    </div>
-  );
-};
-
-function App() {
-  return (
-    <div className="App">
+    <div className="App min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />}>
-            <Route index element={<Home />} />
-          </Route>
+          <Route path="/" element={
+            <div className="container mx-auto px-4 py-8">
+              <div className="text-center mb-8">
+                <h1 className="text-6xl font-bold text-white mb-4 font-['Playfair_Display']">
+                  VisionForge
+                </h1>
+                <p className="text-xl text-purple-200 max-w-2xl mx-auto font-['Inter']">
+                  Transform your images into rich character lore with AI-powered analysis. 
+                  Upload art and instantly generate traits, backstories, and power suggestions.
+                </p>
+              </div>
+
+              <div className="max-w-6xl mx-auto">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 mb-8">
+                    <TabsTrigger value="analyzer" className="text-lg py-3">
+                      Image Analyzer
+                    </TabsTrigger>
+                    <TabsTrigger value="history" className="text-lg py-3">
+                      Analysis History
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="analyzer" className="space-y-8">
+                    <Card className="border-purple-500/20 bg-slate-800/50 backdrop-blur-sm">
+                      <CardHeader className="text-center">
+                        <CardTitle className="text-3xl font-bold text-white font-['Inter']">
+                          Image-to-Lore Analyzer
+                        </CardTitle>
+                        <CardDescription className="text-purple-200 text-lg">
+                          Upload character art to extract traits, mood, backstory seeds, and power suggestions
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ImageAnalyzer onAnalysisComplete={handleAnalysisComplete} />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
+                  <TabsContent value="history" className="space-y-8">
+                    <Card className="border-purple-500/20 bg-slate-800/50 backdrop-blur-sm">
+                      <CardHeader className="text-center">
+                        <CardTitle className="text-3xl font-bold text-white font-['Inter']">
+                          Character Analysis History
+                        </CardTitle>
+                        <CardDescription className="text-purple-200 text-lg">
+                          View and manage your previous character analyses
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <AnalysisHistory key={refreshHistory} />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </div>
+          } />
         </Routes>
       </BrowserRouter>
+      <Toaster />
     </div>
   );
 }
