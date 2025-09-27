@@ -173,6 +173,22 @@ function App() {
                     </Card>
                   </TabsContent>
 
+                  <TabsContent value="settings" className="space-y-8">
+                    <Card className="border-indigo-500/20 bg-slate-800/50 backdrop-blur-sm">
+                      <CardHeader className="text-center">
+                        <CardTitle className="text-3xl font-bold text-white font-['Inter']">
+                          AI Settings & Content Safety
+                        </CardTitle>
+                        <CardDescription className="text-indigo-200 text-lg">
+                          Configure your AI provider preferences and content safety levels
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <AISettings onSettingsChange={handleSettingsChange} />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
                   <TabsContent value="history" className="space-y-8">
                     <Card className="border-indigo-500/20 bg-slate-800/50 backdrop-blur-sm">
                       <CardHeader className="text-center">
