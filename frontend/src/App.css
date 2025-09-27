@@ -14,7 +14,7 @@ body {
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #0f172a 0%, #581c87 50%, #0f172a 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #312e81 50%, #0f172a 100%);
   min-height: 100vh;
 }
 
@@ -32,17 +32,17 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(139, 92, 246, 0.8);
+  background: rgba(99, 102, 241, 0.8);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(139, 92, 246, 1);
+  background: rgba(99, 102, 241, 1);
 }
 
 /* Button hover effects */
 .btn-primary {
-  @apply bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg;
+  @apply bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg;
 }
 
 .btn-secondary {
@@ -51,32 +51,32 @@ body {
 
 /* Card animations */
 .analysis-card {
-  @apply transform hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/25;
+  @apply transform hover:scale-105 transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/25;
 }
 
 /* File upload area */
 .file-upload-area {
-  @apply border-2 border-dashed border-purple-500/50 hover:border-purple-400 transition-colors duration-300 rounded-xl p-8 text-center bg-slate-800/30 hover:bg-slate-800/50;
+  @apply border-2 border-dashed border-indigo-500/50 hover:border-indigo-400 transition-colors duration-300 rounded-xl p-8 text-center bg-slate-800/30 hover:bg-slate-800/50;
 }
 
 /* Gradient text */
 .gradient-text {
-  @apply bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent;
+  @apply bg-gradient-to-r from-indigo-400 to-blue-400 bg-clip-text text-transparent;
 }
 
 /* Loading animation */
 .loading-pulse {
-  @apply animate-pulse bg-gradient-to-r from-purple-500/20 to-pink-500/20;
+  @apply animate-pulse bg-gradient-to-r from-indigo-500/20 to-blue-500/20;
 }
 
 /* Trait badges */
 .trait-badge {
-  @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-500/20 text-purple-300 border border-purple-500/30;
+  @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-indigo-500/20 text-indigo-300 border border-indigo-500/30;
 }
 
 /* Power suggestion cards */
 .power-card {
-  @apply bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm border border-purple-500/20 rounded-lg p-4 hover:border-purple-400/40 transition-colors duration-300;
+  @apply bg-gradient-to-br from-slate-800/50 to-slate-900/50 backdrop-blur-sm border border-indigo-500/20 rounded-lg p-4 hover:border-indigo-400/40 transition-colors duration-300;
 }
 
 /* Backstory seed styling */
@@ -86,7 +86,43 @@ body {
 
 /* Analysis summary */
 .analysis-summary {
-  @apply bg-gradient-to-r from-purple-900/30 to-blue-900/30 backdrop-blur-sm border border-purple-500/30 rounded-xl p-6 text-purple-100;
+  @apply bg-gradient-to-r from-indigo-900/30 to-blue-900/30 backdrop-blur-sm border border-indigo-500/30 rounded-xl p-6 text-indigo-100;
+}
+
+/* Text generation area */
+.text-gen-area {
+  @apply bg-slate-800/50 backdrop-blur-sm border border-indigo-500/20 rounded-xl p-6;
+}
+
+/* Style issue badges */
+.style-issue {
+  @apply bg-red-500/20 text-red-300 border border-red-500/30 px-3 py-1 rounded-lg text-sm;
+}
+
+.style-suggestion {
+  @apply bg-green-500/20 text-green-300 border border-green-500/30 px-3 py-1 rounded-lg text-sm;
+}
+
+/* Cliché score indicator */
+.cliche-low {
+  @apply text-green-400;
+}
+
+.cliche-medium {
+  @apply text-yellow-400;
+}
+
+.cliche-high {
+  @apply text-red-400;
+}
+
+/* Trope builder elements */
+.trope-card {
+  @apply bg-gradient-to-br from-indigo-800/30 to-slate-800/30 backdrop-blur-sm border border-indigo-500/20 rounded-lg p-4 hover:border-indigo-400/40 transition-all duration-300 cursor-pointer;
+}
+
+.trope-selected {
+  @apply border-indigo-400 bg-indigo-500/20;
 }
 
 /* Responsive design adjustments */
@@ -98,11 +134,15 @@ body {
   h1 {
     @apply text-4xl;
   }
+  
+  .TabsList {
+    @apply grid-cols-2 gap-2;
+  }
 }
 
 /* Custom focus styles */
 .focus-ring {
-  @apply focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-slate-900;
+  @apply focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900;
 }
 
 /* Animation keyframes */
@@ -121,6 +161,21 @@ body {
   animation: fadeIn 0.6s ease-out;
 }
 
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.slide-in {
+  animation: slideIn 0.4s ease-out;
+}
+
 /* Glass morphism effect */
 .glass {
   @apply bg-white/10 backdrop-blur-md border border-white/20;
@@ -128,5 +183,19 @@ body {
 
 /* Custom component styles */
 .visionforge-card {
-  @apply bg-slate-800/50 backdrop-blur-sm border border-purple-500/20 rounded-xl shadow-lg hover:shadow-purple-500/25 transition-all duration-300;
+  @apply bg-slate-800/50 backdrop-blur-sm border border-indigo-500/20 rounded-xl shadow-lg hover:shadow-indigo-500/25 transition-all duration-300;
+}
+
+/* Text editor styles */
+.text-editor {
+  @apply bg-slate-900/50 border border-indigo-500/30 rounded-lg p-4 text-slate-200 min-h-32 focus:border-indigo-400 focus:outline-none transition-colors duration-200;
+}
+
+/* Generation type selector */
+.gen-type-active {
+  @apply bg-indigo-500/30 text-indigo-200 border-indigo-400;
+}
+
+.gen-type-inactive {
+  @apply bg-slate-700/50 text-slate-400 border-slate-600 hover:bg-slate-600/50 hover:text-slate-300;
 }
