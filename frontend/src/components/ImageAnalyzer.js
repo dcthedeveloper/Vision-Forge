@@ -122,7 +122,7 @@ const GEOGRAPHIC_CONTEXTS = {
   "rural_urban": "Rural-Urban Corridor"
 };
 
-const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
+const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated, aiSettings = { provider: 'ollama', safetyLevel: 'moderate' } }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedGenre, setSelectedGenre] = useState("urban_realistic");
   const [characterOrigin, setCharacterOrigin] = useState("nootropic_enhanced");
