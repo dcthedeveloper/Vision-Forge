@@ -144,45 +144,45 @@ Be specific and detailed. Focus on what you actually see in the image - clothing
         )
         
         response = await chat.send_message(user_message)
+        
+        # Parse JSON response
+        import json
+        try:
+            # Extract JSON from response
+            response_text = str(response)
+            if "```json" in response_text:
+                json_start = response_text.find("```json") + 7
+                json_end = response_text.find("```", json_start)
+                json_text = response_text[json_start:json_end].strip()
+            elif "{" in response_text:
+                # Try to find JSON in the response
+                json_start = response_text.find("{")
+                json_end = response_text.rfind("}") + 1
+                json_text = response_text[json_start:json_end]
+            else:
+                raise ValueError("No JSON found in response")
             
-            # Parse JSON response
-            import json
-            try:
-                # Extract JSON from response
-                response_text = str(response)
-                if "```json" in response_text:
-                    json_start = response_text.find("```json") + 7
-                    json_end = response_text.find("```", json_start)
-                    json_text = response_text[json_start:json_end].strip()
-                elif "{" in response_text:
-                    # Try to find JSON in the response
-                    json_start = response_text.find("{")
-                    json_end = response_text.rfind("}") + 1
-                    json_text = response_text[json_start:json_end]
-                else:
-                    raise ValueError("No JSON found in response")
-                
-                parsed_data = json.loads(json_text)
-                return parsed_data
-                
-            except Exception as e:
-                logger.error(f"Failed to parse JSON response: {e}")
-                logger.error(f"Response text: {response_text}")
-                # Return fallback structure with actual response content
-                return {
-                    "traits": [
-                        {"category": "Analysis", "trait": f"Raw response: {response_text[:200]}...", "confidence": 0.5}
-                    ],
-                    "mood": "Analysis in progress",
-                    "backstory_seeds": [f"Response parsing failed: {str(e)}"],
-                    "power_suggestions": [{
-                        "name": "Analysis Error",
-                        "description": "Please try again",
-                        "limitations": "Technical issue",
-                        "cost_level": 5
-                    }],
-                    "persona_summary": f"Character analysis encountered parsing issues. Raw response available in traits."
-                }
+            parsed_data = json.loads(json_text)
+            return parsed_data
+            
+        except Exception as e:
+            logger.error(f"Failed to parse JSON response: {e}")
+            logger.error(f"Response text: {response_text}")
+            # Return fallback structure with actual response content
+            return {
+                "traits": [
+                    {"category": "Analysis", "trait": f"Raw response: {response_text[:200]}...", "confidence": 0.5}
+                ],
+                "mood": "Analysis in progress",
+                "backstory_seeds": [f"Response parsing failed: {str(e)}"],
+                "power_suggestions": [{
+                    "name": "Analysis Error",
+                    "description": "Please try again",
+                    "limitations": "Technical issue",
+                    "cost_level": 5
+                }],
+                "persona_summary": f"Character analysis encountered parsing issues. Raw response available in traits."
+            }
         
     except Exception as e:
         logger.error(f"Vision analysis failed: {e}")
