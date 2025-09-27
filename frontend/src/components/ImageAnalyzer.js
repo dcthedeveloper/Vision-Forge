@@ -301,6 +301,44 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* OP MODE TOGGLE - PROMINENTLY DISPLAYED */}
+          <div className={`p-4 rounded-lg border-2 transition-all duration-300 ${
+            opMode 
+              ? 'border-red-500 bg-gradient-to-r from-red-900/30 to-orange-900/30 shadow-lg shadow-red-500/25' 
+              : 'border-yellow-500/50 bg-gradient-to-r from-yellow-900/20 to-orange-900/20 hover:border-yellow-400 cursor-pointer'
+          }`}
+          onClick={() => setOpMode(!opMode)}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`text-2xl ${opMode ? 'animate-pulse' : ''}`}>
+                  🔥
+                </div>
+                <div>
+                  <h3 className={`font-bold ${opMode ? 'text-red-300' : 'text-yellow-300'}`}>
+                    BROKEN/OP CHARACTER MODE
+                  </h3>
+                  <p className={`text-sm ${opMode ? 'text-red-200' : 'text-yellow-200'}`}>
+                    Create overpowered characters that break narrative balance
+                  </p>
+                </div>
+              </div>
+              <div className={`w-12 h-6 rounded-full ${opMode ? 'bg-red-500' : 'bg-gray-600'} relative transition-colors duration-300`}>
+                <div className={`w-5 h-5 bg-white rounded-full absolute top-0.5 transition-transform duration-300 ${
+                  opMode ? 'translate-x-6' : 'translate-x-0.5'
+                }`} />
+              </div>
+            </div>
+            {opMode && (
+              <div className="mt-3 p-3 bg-red-800/30 rounded border border-red-500/30">
+                <p className="text-red-200 text-xs">
+                  ⚠️ <strong>WARNING:</strong> OP Mode creates characters that intentionally break story balance, 
+                  bypass power limitations, and disrupt narrative scaling. Perfect for exploring "what if" scenarios, 
+                  creating final bosses, or writing about consequences of unlimited power.
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Basic Settings */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Genre Selection */}
