@@ -106,7 +106,7 @@ const AdvancedPowerSystem = ({ aiSettings = { provider: 'ollama', safetyLevel: '
                   <SelectValue placeholder="Choose thematic focus..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No specific theme</SelectItem>
+                  <SelectItem value="none">No specific theme</SelectItem>
                   {themes.map((theme) => (
                     <SelectItem key={theme.id} value={theme.id}>
                       <div className="space-y-1">
