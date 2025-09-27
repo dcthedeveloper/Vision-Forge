@@ -66,8 +66,8 @@ def main():
     # Define all 9 endpoints to test
     tests = [
         # CORE ENDPOINTS (6)
-        ("1. Health Check", "GET", f"{BACKEND_URL}/"),
-        ("2. Genres", "GET", f"{BACKEND_URL}/genres"),
+        ("1. Health Check", "GET", f"{BACKEND_URL}/", None),
+        ("2. Genres", "GET", f"{BACKEND_URL}/genres", None),
         ("3. Text Generation", "POST", f"{BACKEND_URL}/generate-text", {
             "prompt": "Test character creation",
             "generation_type": "character"
@@ -75,10 +75,10 @@ def main():
         ("4. Style Analysis", "POST", f"{BACKEND_URL}/analyze-style", {
             "text": "The mysterious figure delved into the enigmatic tapestry"
         }),
-        ("5. Analysis History", "GET", f"{BACKEND_URL}/analyses"),
+        ("5. Analysis History", "GET", f"{BACKEND_URL}/analyses", None),
         
         # PHASE 2 ENDPOINTS (3)
-        ("6. Beat Sheet Types", "GET", f"{BACKEND_URL}/beat-sheet-types"),
+        ("6. Beat Sheet Types", "GET", f"{BACKEND_URL}/beat-sheet-types", None),
         ("7. Beat Sheet Generation", "POST", f"{BACKEND_URL}/generate-beat-sheet", {
             "sheet_type": "save_the_cat",
             "tone_pacing": "standard",
