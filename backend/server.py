@@ -505,8 +505,8 @@ async def analyze_image(file: UploadFile = File(...)):
         # Read and process image
         image_data = await file.read()
         
-        # Get vision analysis from OpenAI GPT-4o
-        analysis_data = await get_vision_analysis(image_data, file.filename)
+        # Get multi-stage analysis for higher quality
+        analysis_data = await get_multi_stage_analysis(image_data, file.filename)
         
         # Create character analysis object
         character_analysis = CharacterAnalysis(
