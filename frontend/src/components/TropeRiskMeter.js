@@ -8,10 +8,14 @@ import { Loader2, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Zap, Eye
 import { useCharacter } from '../contexts/CharacterContext';
 
 const TropeRiskMeter = () => {
+  // Character context for cross-tool character access
+  const { currentCharacter, hasActiveCharacter, getCharacterName } = useCharacter();
+  
   const [analysisHistory, setAnalysisHistory] = useState([]);
   const [selectedCharacter, setSelectedCharacter] = useState(null);
   const [tropeAnalysis, setTropeAnalysis] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [useCurrentCharacter, setUseCurrentCharacter] = useState(true);
 
   const backendUrl = process.env.REACT_APP_BACKEND_URL || import.meta.env.REACT_APP_BACKEND_URL;
 
