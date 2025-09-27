@@ -14,6 +14,11 @@ import uuid
 from datetime import datetime
 import asyncio
 
+# Import our new foundational systems
+from knowledge_graph import get_knowledge_graph, initialize_knowledge_graph
+from vector_db import get_vector_db, initialize_vector_db
+from rule_engine import get_rule_engine, check_character_rules, check_style_rules, RuleViolation
+
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
