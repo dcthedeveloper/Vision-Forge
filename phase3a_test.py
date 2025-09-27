@@ -81,22 +81,20 @@ class Phase3ATester:
                         check_result = {}
                         has_required = False
                         
-                        if has_required:
-                            self.log_result("Continuity Check (Basic)", True, 
-                                          f"Continuity analysis completed with {check_result['total_violations']} violations", {
-                                              "total_violations": check_result["total_violations"],
-                                              "critical_count": check_result["critical_count"],
-                                              "high_count": check_result["high_count"],
-                                              "medium_count": check_result["medium_count"],
-                                              "low_count": check_result["low_count"]
-                                          })
-                        else:
-                            self.log_result("Continuity Check (Basic)", False, "Invalid response structure", {
-                                "has_required_fields": has_required,
-                                "missing_fields": [f for f in required_fields if f not in check_result]
-                            })
+                    if has_required:
+                        self.log_result("Continuity Check (Basic)", True, 
+                                      f"Continuity analysis completed with {check_result['total_violations']} violations", {
+                                          "total_violations": check_result["total_violations"],
+                                          "critical_count": check_result["critical_count"],
+                                          "high_count": check_result["high_count"],
+                                          "medium_count": check_result["medium_count"],
+                                          "low_count": check_result["low_count"]
+                                      })
                     else:
-                        self.log_result("Continuity Check (Basic)", False, "Invalid response format", data)
+                        self.log_result("Continuity Check (Basic)", False, "Invalid response structure", {
+                            "has_required_fields": has_required,
+                            "missing_fields": [f for f in required_fields if f not in check_result] if check_result else []
+                        })
                 else:
                     error_text = await response.text()
                     self.log_result("Continuity Check (Basic)", False, f"HTTP {response.status}", {"error": error_text})
