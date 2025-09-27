@@ -1414,6 +1414,288 @@ Suggestions:"""
         logger.warning(f"Failed to enhance suggestions: {e}")
         return base_suggestions
 
+# Content Safety & Model Selection Endpoints
+@api_router.get("/ai-providers")
+async def get_ai_providers():
+    """Get available AI providers and their status"""
+    try:
+        hybrid_client = get_hybrid_ai_client()
+        providers = hybrid_client.get_available_providers()
+        status = hybrid_client.get_provider_status()
+        
+        # Combine provider info with status
+        for provider in providers:
+            provider_id = provider["id"]
+            provider["status"] = status.get(provider_id, {"available": False, "status": "unknown"})
+        
+        return {
+            "providers": providers,
+            "default_provider": hybrid_client.default_provider.value,
+            "success": True
+        }
+    except Exception as e:
+        logger.error(f"Failed to get AI providers: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get AI providers: {str(e)}")
+
+@api_router.post("/set-default-provider")
+async def set_default_provider(request: dict):
+    """Set default AI provider"""
+    try:
+        provider_id = request.get("provider")
+        if not provider_id:
+            raise HTTPException(status_code=400, detail="Provider ID required")
+        
+        try:
+            provider = AIProvider(provider_id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid provider: {provider_id}")
+        
+        hybrid_client = get_hybrid_ai_client()
+        hybrid_client.set_default_provider(provider)
+        
+        return {
+            "message": f"Default provider set to {provider.value}",
+            "provider": provider.value,
+            "success": True
+        }
+    except Exception as e:
+        logger.error(f"Failed to set default provider: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.get("/content-safety-levels")
+async def get_content_safety_levels():
+    """Get available content safety levels"""
+    try:
+        content_filter = get_content_filter()
+        
+        levels = []
+        for level in ContentSafetyLevel:
+            info = content_filter.get_safety_level_info(level)
+            levels.append({
+                "id": level.value,
+                "name": level.value.title(),
+                "description": info["description"],
+                "target_audience": info["target_audience"],
+                "allowed_categories": [cat.value for cat in info["allowed_categories"]]
+            })
+        
+        return {"safety_levels": levels, "success": True}
+        
+    except Exception as e:
+        logger.error(f"Failed to get safety levels: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/analyze-content-safety")
+async def analyze_content_safety(request: dict):
+    """Analyze content against safety guidelines"""
+    try:
+        text = request.get("text", "")
+        safety_level = request.get("safety_level", "moderate")
+        
+        if not text:
+            raise HTTPException(status_code=400, detail="Text content required")
+        
+        try:
+            level = ContentSafetyLevel(safety_level)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid safety level: {safety_level}")
+        
+        content_filter = get_content_filter()
+        result = content_filter.analyze_content(text, level)
+        
+        return {
+            "allowed": result.allowed,
+            "safety_level": result.safety_level.value,
+            "flagged_categories": [cat.value for cat in result.flagged_categories],
+            "suggestions": result.suggestions,
+            "success": True
+        }
+        
+    except Exception as e:
+        logger.error(f"Content safety analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Updated analyze-image endpoint with hybrid AI and content filtering
+@api_router.post("/analyze-image")
+async def analyze_image(
+    file: UploadFile = File(...),
+    genre: str = "urban_realistic",
+    origin: str = "human",
+    social_status: str = "middle_class", 
+    power_source: str = "none",
+    tags: str = "",
+    op_mode: str = "false",
+    ai_provider: str = "ollama",
+    safety_level: str = "moderate"
+):
+    """Enhanced image analysis with hybrid AI and content filtering"""
+    try:
+        # Validate inputs
+        try:
+            provider = AIProvider(ai_provider)
+        except ValueError:
+            provider = AIProvider.OLLAMA  # Default fallback
+        
+        try:
+            content_safety = ContentSafetyLevel(safety_level)
+        except ValueError:
+            content_safety = ContentSafetyLevel.MODERATE  # Default fallback
+        
+        # Read image
+        image_data = await file.read()
+        image_b64 = base64.b64encode(image_data).decode('utf-8')
+        
+        # Parse tags
+        archetype_tags = [tag.strip() for tag in tags.split(",") if tag.strip()] if tags else []
+        op_mode_bool = op_mode.lower() == "true"
+        
+        # Use hybrid AI client for analysis
+        hybrid_client = get_hybrid_ai_client()
+        
+        # Stage 1: Visual Extraction
+        stage1_prompt = f"""Extract visual details only. No speculation about personality or powers.
+        
+Safety Level: {content_safety.value} - {get_content_filter().get_safety_level_info(content_safety)['description']}
+            
+Return JSON:
+{{
+  "appearance": "Physical description",
+  "clothing": "Detailed clothing description", 
+  "setting": "Environment details",
+  "pose_expression": "Body language and expression",
+  "style_aesthetic": "Overall visual style"
+}}
+
+Extract visual details from this image."""
+        
+        stage1_response = await hybrid_client.analyze_image(
+            image_b64, stage1_prompt, provider, content_safety
+        )
+        stage1_data = await parse_json_response(stage1_response)
+        
+        # Stage 2: Genre-Adapted Analysis (if applicable)
+        genre_data = {}
+        if genre and genre in GENRES:
+            genre_data = await get_genre_adapted_analysis_hybrid(
+                stage1_data, genre, provider, content_safety
+            )
+        
+        # Stage 3: Integrated Character Creation
+        stage3_prompt = f"""Create a cohesive character profile that integrates visual analysis with genre context.
+        
+Safety Level: {content_safety.value}
+            
+Focus on:
+- Realistic abilities that fit both appearance and genre
+- Complex personality traits beyond surface observations
+- Backstory that explains the visual elements
+- Professional/clinical terminology for abilities
+
+Avoid generic fantasy terms. Use specific, grounded language.
+
+Return JSON with the following structure:
+{{
+  "traits": ["trait1", "trait2", "trait3"],
+  "mood": "character mood",
+  "realistic_backstory_seeds": ["seed1", "seed2", "seed3"],
+  "realistic_abilities": [{{"name": "ability", "description": "desc", "limitations": "limits", "cost_level": 3}}],
+  "persona_summary": "comprehensive character summary"
+}}
+
+Context to integrate:
+Visual: {stage1_data}"""
+        
+        if genre_data:
+            stage3_prompt += f"\nGenre Context: {genre_data}"
+        
+        stage3_response = await hybrid_client.generate_text(
+            stage3_prompt, provider, content_safety, temperature=0.7
+        )
+        stage3_data = await parse_json_response(stage3_response)
+        
+        # Combine results with enhanced data structure
+        final_result = {
+            "id": str(uuid.uuid4()),
+            "traits": stage3_data.get("traits", []),
+            "mood": stage3_data.get("mood", "Unknown"),
+            "backstory_seeds": stage3_data.get("realistic_backstory_seeds", genre_data.get("genre_backstory_elements", [])),
+            "power_suggestions": genre_data.get("genre_adapted_powers", stage3_data.get("realistic_abilities", [])),
+            "persona_summary": stage3_data.get("persona_summary", ""),
+            "genre_context": genre_data.get("universe_connections", "") if genre else "",
+            "visual_analysis": stage1_data,
+            
+            # Enhanced metadata
+            "character_origin": origin,
+            "social_status": social_status,
+            "power_source": power_source,
+            "archetype_tags": archetype_tags,
+            "genre": genre,
+            "op_mode": op_mode_bool,
+            "ai_provider": provider.value,
+            "safety_level": content_safety.value,
+            "created_at": datetime.now().isoformat()
+        }
+        
+        # Store in database with enhanced structure
+        await db.character_analyses.insert_one(final_result.copy())
+        
+        return {"analysis": final_result, "success": True, "message": f"Character analyzed using {provider.value} with {content_safety.value} safety level"}
+        
+    except Exception as e:
+        logger.error(f"Enhanced image analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Image analysis failed: {str(e)}")
+
+async def get_genre_adapted_analysis_hybrid(visual_data: Dict, genre: str, 
+                                          provider: AIProvider,
+                                          safety_level: ContentSafetyLevel) -> Dict[str, Any]:
+    """Genre analysis using hybrid AI with content filtering"""
+    try:
+        genre_info = GENRES.get(genre, GENRES["urban_realistic"])
+        
+        prompt = f"""You are a {genre_info['name']} character expert. Adapt this character analysis to fit the {genre_info['name']} universe.
+
+Safety Level: {safety_level.value}
+
+GENRE CONTEXT:
+- Power Style: {genre_info['power_style']}
+- Character Types: {genre_info['character_archetypes']}
+- Tone: {genre_info['tone']}
+
+Based on the visual analysis, create powers and backstory that would fit naturally in {genre_info['name']}.
+
+Return JSON:
+{{
+  "genre_adapted_powers": [
+    {{
+      "name": "Power name fitting {genre_info['name']} style",
+      "description": "How it works in this universe",
+      "limitations": "Genre-appropriate limitations", 
+      "cost_level": 5,
+      "universe_context": "How this fits the {genre_info['name']} world"
+    }}
+  ],
+  "genre_backstory_elements": [
+    "Backstory element 1 fitting {genre_info['name']}",
+    "Element 2", "Element 3"
+  ],
+  "character_role": "What role this character would play in {genre_info['name']}",
+  "universe_connections": "How they might connect to existing {genre_info['name']} lore"
+}}
+
+Make it feel authentic to {genre_info['name']} while respecting the character's visual appearance.
+
+Visual Analysis: {visual_data}
+
+Adapt this character for {genre_info['name']}:"""
+        
+        hybrid_client = get_hybrid_ai_client()
+        response = await hybrid_client.generate_text(prompt, provider, safety_level, temperature=0.7)
+        return await parse_json_response(response)
+        
+    except Exception as e:
+        logger.error(f"Genre adaptation failed: {e}")
+        return {}
+
 # Initialize systems on startup
 @app.on_event("startup")
 async def startup_event():
