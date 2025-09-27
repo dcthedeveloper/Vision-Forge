@@ -563,9 +563,203 @@ class VisionForgeBackendTester:
         except Exception as e:
             self.log_result("Trope Risk Analysis (Overall)", False, f"Test setup error: {str(e)}")
     
+    async def test_power_system_themes(self):
+        """Test power system themes endpoint at /api/power-system-themes"""
+        try:
+            async with self.session.get(f"{BACKEND_URL}/power-system-themes") as response:
+                if response.status == 200:
+                    data = await response.json()
+                    if "themes" in data and isinstance(data["themes"], list):
+                        themes = data["themes"]
+                        
+                        # Verify expected themes (6 narrative themes)
+                        expected_theme_ids = [
+                            "identity_crisis", "power_corruption", "inherited_trauma",
+                            "technological_anxiety", "social_stratification", "existential_purpose"
+                        ]
+                        
+                        available_theme_ids = [theme["id"] for theme in themes]
+                        themes_match = all(theme_id in available_theme_ids for theme_id in expected_theme_ids)
+                        
+                        # Verify theme structure
+                        valid_structure = all(
+                            all(field in theme for field in ["id", "name", "description", "examples"])
+                            for theme in themes
+                        ) if themes else False
+                        
+                        if themes_match and valid_structure and len(themes) == 6:
+                            self.log_result("Power System Themes", True, "All 6 narrative themes available", {
+                                "themes_count": len(themes),
+                                "available_themes": available_theme_ids,
+                                "structure_valid": valid_structure
+                            })
+                        else:
+                            self.log_result("Power System Themes", False, "Missing expected themes or invalid structure", {
+                                "expected_count": 6,
+                                "actual_count": len(themes),
+                                "themes_match": themes_match,
+                                "structure_valid": valid_structure,
+                                "available_themes": available_theme_ids
+                            })
+                    else:
+                        self.log_result("Power System Themes", False, "Invalid response format", data)
+                else:
+                    error_text = await response.text()
+                    self.log_result("Power System Themes", False, f"HTTP {response.status}", {"error": error_text})
+        except Exception as e:
+            self.log_result("Power System Themes", False, f"Request error: {str(e)}")
+    
+    async def test_power_system_generation(self):
+        """Test advanced power system generation at /api/generate-power-system"""
+        try:
+            # Test configurations as specified in the review request
+            test_configs = [
+                {
+                    "name": "Simple Request (Default)",
+                    "payload": {}
+                },
+                {
+                    "name": "With Theme",
+                    "payload": {
+                        "narrative_focus": "power_corruption",
+                        "complexity_level": "moderate"
+                    }
+                },
+                {
+                    "name": "With Character Context",
+                    "payload": {
+                        "character_context": {
+                            "character_origin": "enhanced",
+                            "social_status": "entrepreneur"
+                        },
+                        "complexity_level": "complex"
+                    }
+                }
+            ]
+            
+            success_count = 0
+            for config in test_configs:
+                try:
+                    async with self.session.post(f"{BACKEND_URL}/generate-power-system",
+                                               json=config["payload"],
+                                               headers={"Content-Type": "application/json"}) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            if data.get("success") and "power_system" in data:
+                                power_system = data["power_system"]
+                                
+                                # Verify expected response structure
+                                required_fields = [
+                                    "power_source", "mechanic", "limitations", "progression",
+                                    "power_metrics", "narrative_elements", "creative_suggestions"
+                                ]
+                                has_required = all(field in power_system for field in required_fields)
+                                
+                                # Verify power_source structure
+                                power_source_valid = (
+                                    "power_source" in power_system and
+                                    all(field in power_system["power_source"] for field in ["type", "name", "description"])
+                                )
+                                
+                                # Verify mechanic structure
+                                mechanic_valid = (
+                                    "mechanic" in power_system and
+                                    all(field in power_system["mechanic"] for field in ["type", "name", "description"])
+                                )
+                                
+                                # Verify limitations structure
+                                limitations_valid = (
+                                    "limitations" in power_system and
+                                    "primary" in power_system["limitations"] and
+                                    all(field in power_system["limitations"]["primary"] for field in ["type", "name", "description"])
+                                )
+                                
+                                # Verify power metrics (6 numerical values 0.0-1.0)
+                                power_metrics = power_system.get("power_metrics", {})
+                                expected_metrics = [
+                                    "raw_power_level", "control_precision", "cost_severity",
+                                    "social_impact", "progression_speed", "uniqueness_factor"
+                                ]
+                                metrics_valid = (
+                                    len(power_metrics) == 6 and
+                                    all(metric in power_metrics for metric in expected_metrics) and
+                                    all(0.0 <= power_metrics[metric] <= 1.0 for metric in expected_metrics)
+                                )
+                                
+                                # Verify reasonable metric ranges (0.1-0.9 as specified)
+                                metrics_reasonable = all(
+                                    0.1 <= power_metrics[metric] <= 0.9 for metric in expected_metrics
+                                ) if metrics_valid else False
+                                
+                                # Verify narrative elements
+                                narrative_valid = (
+                                    "narrative_elements" in power_system and
+                                    all(field in power_system["narrative_elements"] for field in ["thematic_resonance", "societal_role", "philosophical_question"])
+                                )
+                                
+                                # Verify creative suggestions (5 specific applications)
+                                creative_suggestions = power_system.get("creative_suggestions", [])
+                                suggestions_valid = isinstance(creative_suggestions, list) and len(creative_suggestions) == 5
+                                
+                                if (has_required and power_source_valid and mechanic_valid and 
+                                    limitations_valid and metrics_valid and metrics_reasonable and 
+                                    narrative_valid and suggestions_valid):
+                                    success_count += 1
+                                    self.log_result(f"Power System Generation ({config['name']})", True, 
+                                                  "Complete power system generated successfully", {
+                                                      "power_source": power_system["power_source"]["type"],
+                                                      "mechanic": power_system["mechanic"]["type"],
+                                                      "primary_limitation": power_system["limitations"]["primary"]["type"],
+                                                      "has_secondary_limitation": power_system["limitations"].get("secondary") is not None,
+                                                      "power_metrics_valid": metrics_valid,
+                                                      "metrics_in_range": metrics_reasonable,
+                                                      "creative_suggestions_count": len(creative_suggestions),
+                                                      "thematic_coherence": bool(power_system["narrative_elements"]["thematic_resonance"])
+                                                  })
+                                else:
+                                    self.log_result(f"Power System Generation ({config['name']})", False, 
+                                                  "Invalid power system structure", {
+                                                      "has_required_fields": has_required,
+                                                      "power_source_valid": power_source_valid,
+                                                      "mechanic_valid": mechanic_valid,
+                                                      "limitations_valid": limitations_valid,
+                                                      "metrics_valid": metrics_valid,
+                                                      "metrics_reasonable": metrics_reasonable,
+                                                      "narrative_valid": narrative_valid,
+                                                      "suggestions_valid": suggestions_valid,
+                                                      "suggestions_count": len(creative_suggestions)
+                                                  })
+                            else:
+                                self.log_result(f"Power System Generation ({config['name']})", False, 
+                                              "Invalid response format", data)
+                        else:
+                            error_text = await response.text()
+                            self.log_result(f"Power System Generation ({config['name']})", False, 
+                                          f"HTTP {response.status}", {"error": error_text})
+                except Exception as e:
+                    self.log_result(f"Power System Generation ({config['name']})", False, 
+                                  f"Request error: {str(e)}")
+            
+            # Overall power system generation result
+            if success_count == len(test_configs):
+                self.log_result("Power System Generation (Overall)", True, 
+                              f"All {success_count} configurations successful", {
+                                  "tested_configs": len(test_configs),
+                                  "successful": success_count
+                              })
+            else:
+                self.log_result("Power System Generation (Overall)", False, 
+                              f"Only {success_count}/{len(test_configs)} configurations successful", {
+                                  "tested_configs": len(test_configs),
+                                  "successful": success_count
+                              })
+                
+        except Exception as e:
+            self.log_result("Power System Generation (Overall)", False, f"Test setup error: {str(e)}")
+
     async def run_all_tests(self):
         """Run all backend tests"""
-        print("🚀 Starting VisionForge Backend Tests - Phase 2 Features")
+        print("🚀 Starting VisionForge Backend Tests - Advanced Power System Framework")
         print(f"Testing against: {BACKEND_URL}")
         print("=" * 60)
         
@@ -584,6 +778,11 @@ class VisionForgeBackendTester:
         await self.test_beat_sheet_types()
         await self.test_beat_sheet_generation()
         await self.test_trope_risk_analysis()
+        
+        print("\n🔥 NEW ADVANCED POWER SYSTEM FRAMEWORK:")
+        # Run new Power System Framework tests
+        await self.test_power_system_themes()
+        await self.test_power_system_generation()
         
         # Summary
         print("\n" + "=" * 60)
