@@ -465,30 +465,42 @@ async def get_creative_text_generation(prompt: str, generation_type: str, style_
         raise HTTPException(status_code=500, detail=f"Text generation failed: {str(e)}")
 
 async def analyze_writing_style(text: str) -> Dict[str, Any]:
-    """Analyze text for style issues"""
+    """Analyze text for style issues using Ollama"""
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        prompt = """Analyze text for clichés and style issues. Focus on overused AI words, generic fantasy tropes, passive voice, and telling vs showing.
+
+Provide analysis in JSON format:
+{
+  "cliche_score": 0.3,
+  "issues": [
+    {"type": "cliche", "text": "specific phrase", "suggestion": "improvement"},
+    {"type": "passive_voice", "text": "another phrase", "suggestion": "active version"}
+  ],
+  "suggestions": ["suggestion1", "suggestion2"],
+  "rewritten_text": "improved version of the text"
+}
+
+Text to analyze: """ + text
         
-        chat = LlmChat(
-            api_key=os.environ['EMERGENT_LLM_KEY'],
-            session_id=f"style-analysis-{uuid.uuid4()}",
-            system_message="""Analyze text for clichés and style issues. Focus on overused AI words, generic fantasy tropes, passive voice, and telling vs showing."""
-        ).with_model("anthropic", "claude-sonnet-4-20250514")
+        response = await ollama_text_generation(prompt, temperature=0.3)
         
-        response = await chat.send_message(UserMessage(
-            text=f"Analyze this text for style issues: {text}"
-        ))
+        try:
+            result = await parse_json_response(response)
+            if not result:
+                raise ValueError("No JSON found")
+        except:
+            # Basic fallback analysis
+            cliche_indicators = ["delve", "nestled", "meticulous", "tapestry", "enigmatic"]
+            cliche_count = sum(1 for indicator in cliche_indicators if indicator.lower() in text.lower())
+            
+            result = {
+                "cliche_score": min(cliche_count * 0.2, 1.0),
+                "issues": [{"type": "analysis", "text": "Style analysis", "suggestion": "Review for improvements"}],
+                "suggestions": ["Consider more specific language"],
+                "rewritten_text": response
+            }
         
-        # Basic fallback analysis
-        cliche_indicators = ["delve", "nestled", "meticulous", "tapestry", "enigmatic"]
-        cliche_count = sum(1 for indicator in cliche_indicators if indicator.lower() in text.lower())
-        
-        return {
-            "cliche_score": min(cliche_count * 0.2, 1.0),
-            "issues": [{"type": "analysis", "text": "Style analysis", "suggestion": "Review for improvements"}],
-            "suggestions": ["Consider more specific language"],
-            "rewritten_text": str(response)
-        }
+        return result
         
     except Exception as e:
         logger.error(f"Style analysis failed: {e}")
