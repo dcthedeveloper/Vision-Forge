@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Progress } from './ui/progress';
 import { Badge } from './ui/badge';
 import { toast } from 'sonner';
-import { Loader2, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Zap, Eye, Lightbulb } from 'lucide-react';
+import { Loader2, TrendingUp, TrendingDown, AlertTriangle, CheckCircle, Zap, Eye, Lightbulb, User } from 'lucide-react';
+import { useCharacter } from '../contexts/CharacterContext';
 
 const TropeRiskMeter = () => {
   const [analysisHistory, setAnalysisHistory] = useState([]);
