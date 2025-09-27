@@ -8,6 +8,8 @@ import AnalysisHistory from "./components/AnalysisHistory";
 import TextGenerator from "./components/TextGenerator";
 import StyleCoach from "./components/StyleCoach";
 import TropeBuilder from "./components/TropeBuilder";
+import BeatSheetGenerator from "./components/BeatSheetGenerator";
+import TropeRiskMeter from "./components/TropeRiskMeter";
 import { Button } from "./components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./components/ui/card";
