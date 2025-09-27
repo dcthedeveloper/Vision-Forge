@@ -100,11 +100,10 @@ Be specific and avoid generic descriptions. Focus on unique details that tell a 
         
         # Create message with image
         user_message = UserMessage(
-            text="Analyze this image for character creation. Provide detailed traits, mood, backstory seeds, and power suggestions in the specified JSON format.",
-            image_data=image_data
+            text="Analyze this image for character creation. Provide detailed traits, mood, backstory seeds, and power suggestions in the specified JSON format."
         )
         
-        response = await chat.send_message(user_message)
+        response = await chat.send_message(user_message, image_data=image_data)
         
         # Parse JSON response
         import json
