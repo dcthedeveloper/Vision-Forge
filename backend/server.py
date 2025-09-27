@@ -385,11 +385,8 @@ Extract visual details from this image."""
         else:
             genre_data = {}
         
-        # Stage 3: Integrated Character Creation
-        stage3_chat = LlmChat(
-            api_key=os.environ['EMERGENT_LLM_KEY'],
-            session_id=f"stage3-{uuid.uuid4()}",
-            system_message="""Create a cohesive character profile that integrates visual analysis with genre context.
+        # Stage 3: Integrated Character Creation using Ollama
+        stage3_prompt = """Create a cohesive character profile that integrates visual analysis with genre context.
             
 Focus on:
 - Realistic abilities that fit both appearance and genre
@@ -397,18 +394,27 @@ Focus on:
 - Backstory that explains the visual elements
 - Professional/clinical terminology for abilities
 
-Avoid generic fantasy terms. Use specific, grounded language."""
-        ).with_model("anthropic", "claude-sonnet-4-20250514")
+Avoid generic fantasy terms. Use specific, grounded language.
+
+Return JSON with the following structure:
+{
+  "traits": ["trait1", "trait2", "trait3"],
+  "mood": "character mood",
+  "realistic_backstory_seeds": ["seed1", "seed2", "seed3"],
+  "realistic_abilities": [{"name": "ability", "description": "desc", "limitations": "limits", "cost_level": 3}],
+  "persona_summary": "comprehensive character summary"
+}
+
+Context to integrate:"""
         
-        context = f"Visual: {stage1_data}"
+        context = f"\nVisual: {stage1_data}"
         if genre_data:
             context += f"\nGenre Context: {genre_data}"
             
-        stage3_response = await stage3_chat.send_message(UserMessage(
-            text=f"Create integrated character profile: {context}"
-        ))
+        full_prompt = stage3_prompt + context + "\n\nCreate integrated character profile:"
         
-        stage3_data = await parse_json_response(str(stage3_response))
+        stage3_response = await ollama_text_generation(full_prompt, temperature=0.7)
+        stage3_data = await parse_json_response(stage3_response)
         
         # Combine results
         final_result = {
