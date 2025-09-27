@@ -22,6 +22,7 @@ from rule_engine import get_rule_engine, check_character_rules, check_style_rule
 from ollama_client import get_text_generation as ollama_text_generation, get_image_analysis, get_chat_completion
 from hybrid_ai_client import get_hybrid_ai_client, AIProvider
 from content_filter import get_content_filter, ContentSafetyLevel
+from power_system_framework import get_power_system_generator
 
 
 ROOT_DIR = Path(__file__).parent
