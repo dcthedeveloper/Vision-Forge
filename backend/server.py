@@ -910,20 +910,11 @@ Focus on realism and avoid generic fantasy terms. Make powers fit the origin and
         
         # Convert image to base64
         image_b64 = base64.b64encode(image_data).decode('utf-8')
-        image_content = ImageContent(image_base64=image_b64)
         
-        chat = LlmChat(
-            api_key=os.environ['EMERGENT_LLM_KEY'],
-            session_id=f"enhanced-analysis-{uuid.uuid4()}",
-            system_message=system_prompt
-        ).with_model("openai", "gpt-4o")
+        # Create full prompt for Ollama vision model
+        full_prompt = system_prompt + "\n\nAnalyze this character image with the given context parameters."
         
-        user_message = UserMessage(
-            text=f"Analyze this character image with the given context parameters.",
-            file_contents=[image_content]
-        )
-        
-        response = await chat.send_message(user_message)
+        response = await get_image_analysis(image_b64, full_prompt)
         
         # Parse response
         response_text = str(response)
