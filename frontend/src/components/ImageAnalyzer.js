@@ -202,6 +202,8 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
         origin: characterOrigin,
         social_status: socialStatus,
         power_source: powerSource,
+        evolution_stage: evolutionStage,
+        geographic_context: geographicContext,
         tags: additionalTags.join(',')
       });
 
