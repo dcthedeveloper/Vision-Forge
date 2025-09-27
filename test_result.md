@@ -205,6 +205,7 @@ metadata:
 test_plan:
   current_focus:
     - "Enhanced Trope Risk Meter"
+    - "Advanced Power System Framework"
   stuck_tasks: 
     - "Enhanced Trope Risk Meter"
   test_all: false
