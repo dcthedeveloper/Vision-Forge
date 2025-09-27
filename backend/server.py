@@ -84,6 +84,150 @@ class StyleAnalysisResponse(BaseModel):
 
 
 # LLM Integration Setup
+async def get_multi_stage_analysis(image_data: bytes, image_filename: str) -> Dict[str, Any]:
+    """Multi-stage analysis for higher quality character creation"""
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
+        
+        # Convert image to base64
+        image_b64 = base64.b64encode(image_data).decode('utf-8')
+        image_content = ImageContent(image_base64=image_b64)
+        
+        # Stage 1: Visual Extraction
+        stage1_chat = LlmChat(
+            api_key=os.environ['EMERGENT_LLM_KEY'],
+            session_id=f"stage1-{uuid.uuid4()}",
+            system_message="""You are a visual analyst. Extract only what you can directly observe:
+
+Return JSON:
+{
+  "appearance": "Physical description - build, height, features",
+  "clothing": "Detailed clothing and accessories description", 
+  "setting": "Environment and location details",
+  "pose_expression": "Body language and facial expression",
+  "style_aesthetic": "Overall visual style (modern, vintage, etc.)"
+}
+
+Be precise and observational only. No speculation about personality or powers."""
+        ).with_model("openai", "gpt-4o")
+        
+        stage1_message = UserMessage(
+            text="Analyze this image and extract only the visual details you can directly observe.",
+            file_contents=[image_content]
+        )
+        
+        stage1_response = await stage1_chat.send_message(stage1_message)
+        
+        # Parse Stage 1
+        stage1_data = await parse_json_response(str(stage1_response))
+        
+        # Stage 2: Cultural Context & World Building
+        stage2_chat = LlmChat(
+            api_key=os.environ['EMERGENT_LLM_KEY'], 
+            session_id=f"stage2-{uuid.uuid4()}",
+            system_message="""You are a world-building expert. Based on visual details, determine the character's world and cultural context.
+
+Focus on:
+- What real-world culture/location does this suggest?
+- What profession or lifestyle fits this appearance?
+- What kind of story world does this belong in? (urban drama, corporate thriller, etc.)
+- What social/economic status is indicated?
+
+Return JSON:
+{
+  "cultural_context": "Specific cultural/geographic context",
+  "profession_lifestyle": "Likely profession or lifestyle",
+  "story_world": "Genre and setting type",
+  "social_status": "Economic and social indicators",
+  "realistic_backstory_seeds": ["grounded backstory idea 1", "idea 2", "idea 3"]
+}
+
+Avoid fantasy tropes. Think realistic modern settings."""
+        ).with_model("anthropic", "claude-sonnet-4-20250514")
+        
+        stage2_message = UserMessage(
+            text=f"Based on these visual details, determine the cultural context and world: {stage1_data}"
+        )
+        
+        stage2_response = await stage2_chat.send_message(stage2_message)
+        stage2_data = await parse_json_response(str(stage2_response))
+        
+        # Stage 3: Grounded Character Creation
+        stage3_chat = LlmChat(
+            api_key=os.environ['EMERGENT_LLM_KEY'],
+            session_id=f"stage3-{uuid.uuid4()}",
+            system_message="""You are a character design expert who creates realistic, non-clichéd characters.
+
+Create abilities that fit the real world context. Examples of GOOD vs BAD:
+- BAD: "Shadow Manipulation", "Urban Kinesis", "Energy Control"  
+- GOOD: "Hypercognitive", "Pattern Recognition", "Social Engineering"
+
+Use clinical/realistic terminology. Powers should feel like enhanced human abilities, not fantasy magic.
+
+Return JSON:
+{
+  "traits": [
+    {"category": "Physical", "trait": "description", "confidence": 0.9},
+    {"category": "Professional", "trait": "career/skill description", "confidence": 0.8},
+    {"category": "Psychological", "trait": "mental/emotional traits", "confidence": 0.7}
+  ],
+  "mood": "sophisticated emotional description",
+  "realistic_abilities": [
+    {
+      "name": "Clinical ability name (like Hypercognitive)",
+      "description": "Realistic human enhancement",
+      "limitations": "Real-world constraints",
+      "cost_level": 5
+    }
+  ],
+  "persona_summary": "Complex character description avoiding clichés"
+}"""
+        ).with_model("anthropic", "claude-sonnet-4-20250514")
+        
+        combined_context = f"Visual: {stage1_data}\nContext: {stage2_data}"
+        stage3_message = UserMessage(
+            text=f"Create a realistic character based on: {combined_context}"
+        )
+        
+        stage3_response = await stage3_chat.send_message(stage3_message)
+        stage3_data = await parse_json_response(str(stage3_response))
+        
+        # Combine all stages
+        final_result = {
+            "traits": stage3_data.get("traits", []),
+            "mood": stage3_data.get("mood", "Unknown"),
+            "backstory_seeds": stage2_data.get("realistic_backstory_seeds", []),
+            "power_suggestions": stage3_data.get("realistic_abilities", []),
+            "persona_summary": stage3_data.get("persona_summary", ""),
+            "analysis_quality": "multi_stage",
+            "cultural_context": stage2_data.get("cultural_context", "")
+        }
+        
+        return final_result
+        
+    except Exception as e:
+        logger.error(f"Multi-stage analysis failed: {e}")
+        # Fallback to single stage
+        return await get_vision_analysis(image_data, image_filename)
+
+async def parse_json_response(response_text: str) -> Dict[str, Any]:
+    """Helper to parse JSON from AI responses"""
+    import json
+    try:
+        if "```json" in response_text:
+            json_start = response_text.find("```json") + 7
+            json_end = response_text.find("```", json_start)
+            json_text = response_text[json_start:json_end].strip()
+        elif "{" in response_text:
+            json_start = response_text.find("{")
+            json_end = response_text.rfind("}") + 1
+            json_text = response_text[json_start:json_end]
+        else:
+            return {}
+        return json.loads(json_text)
+    except:
+        return {}
+
 async def get_vision_analysis(image_data: bytes, image_filename: str) -> Dict[str, Any]:
     """Get vision analysis from OpenAI GPT-4o with vision"""
     try:
