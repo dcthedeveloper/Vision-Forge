@@ -229,7 +229,8 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
         power_source: powerSource,
         evolution_stage: evolutionStage,
         geographic_context: geographicContext,
-        tags: additionalTags.join(',')
+        tags: additionalTags.join(','),
+        op_mode: opMode ? 'true' : 'false'
       });
 
       const response = await axios.post(`${API}/analyze-image?${params}`, formData, {
