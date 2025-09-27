@@ -126,7 +126,15 @@ Analyze the provided image and return a detailed JSON response with this exact s
   "persona_summary": "2-3 sentence character summary avoiding clichés, based on actual visual details"
 }
 
-Be specific and detailed. Focus on what you actually see in the image - clothing, posture, setting, expression, style. Avoid generic fantasy tropes unless clearly visible."""
+Be specific and detailed. Focus on what you actually see in the image - clothing, posture, setting, expression, style. 
+
+For power suggestions, consider the character's actual appearance and context:
+- Business/professional characters: social influence, strategic thinking, network access
+- Military/tactical characters: tactical awareness, leadership, quick decision-making  
+- Artist/creative characters: inspiration, pattern recognition, emotional influence
+- Street/urban characters: survival instincts, street knowledge, adaptability
+
+Avoid generic fantasy/superhero power names like "Shadow Control", "Element Manipulation", or anything ending in "-kinesis". Think more grounded and realistic abilities that fit the character's world and appearance."""
         )
         
         chat = chat.with_model("openai", "gpt-4o")
