@@ -50,7 +50,7 @@ function App() {
 
               <div className="max-w-7xl mx-auto">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="grid w-full grid-cols-8 mb-8">
+                  <TabsList className="flex w-full justify-center mb-8 h-auto flex-wrap gap-1">
                     <TabsTrigger value="image-analyzer" className="text-sm py-3">
                       Image Analyzer
                     </TabsTrigger>
