@@ -118,7 +118,10 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
   const ADDITIONAL_TAGS = [
     "Anti-Hero", "Villain", "Morally Grey", "Reluctant Hero", "Team Leader",
     "Loner", "Mentor Figure", "Rookie", "Veteran", "Reformed Criminal",
-    "Double Agent", "Vigilante", "Government Agent", "Rebel", "Pacifist"
+    "Double Agent", "Vigilante", "Government Agent", "Rebel", "Pacifist",
+    "System Changer", "Power Broker", "Empire Builder", "Network Master",
+    "Strategic Mastermind", "Cultural Bridge", "Economic Disruptor", "Shadow Operator",
+    "Community Leader", "Underground King", "Corporate Infiltrator", "Street Philosopher"
   ];
 
   const handleFileSelect = useCallback((event) => {
