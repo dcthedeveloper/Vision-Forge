@@ -88,7 +88,10 @@ function App() {
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <ImageAnalyzer onAnalysisComplete={handleAnalysisComplete} />
+                        <ImageAnalyzer 
+                          onAnalysisComplete={handleAnalysisComplete} 
+                          aiSettings={aiSettings}
+                        />
                       </CardContent>
                     </Card>
                   </TabsContent>
