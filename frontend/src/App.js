@@ -143,6 +143,7 @@ function App() {
                   </TabsContent>
 
                   <TabsContent value="continuity" className="space-y-8">
+                    <CharacterStatus />
                     <Card className="border-indigo-500/20 bg-slate-800/50 backdrop-blur-sm">
                       <CardHeader className="text-center">
                         <CardTitle className="text-3xl font-bold text-white font-['Inter']">
