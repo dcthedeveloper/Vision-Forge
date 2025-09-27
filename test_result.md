@@ -186,9 +186,9 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Beat-Sheet Generator Implementation"
     - "Enhanced Trope Risk Meter"
-  stuck_tasks: []
+  stuck_tasks: 
+    - "Enhanced Trope Risk Meter"
   test_all: false
   test_priority: "high_first"
 
