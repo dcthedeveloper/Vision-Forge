@@ -180,6 +180,22 @@ function App() {
                     </Card>
                   </TabsContent>
 
+                  <TabsContent value="power-system" className="space-y-8">
+                    <Card className="border-indigo-500/20 bg-slate-800/50 backdrop-blur-sm">
+                      <CardHeader className="text-center">
+                        <CardTitle className="text-3xl font-bold text-white font-['Inter']">
+                          Advanced Power System Generator
+                        </CardTitle>
+                        <CardDescription className="text-indigo-200 text-lg">
+                          Generate sophisticated power systems using patterns from 20+ fictional works
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <AdvancedPowerSystem aiSettings={aiSettings} />
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+
                   <TabsContent value="settings" className="space-y-8">
                     <Card className="border-indigo-500/20 bg-slate-800/50 backdrop-blur-sm">
                       <CardHeader className="text-center">
