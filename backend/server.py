@@ -1279,6 +1279,129 @@ Enhanced description:"""
         logger.warning(f"Beat enhancement failed, returning original beats: {e}")
         return beats
 
+# Enhanced Trope Risk Meter Endpoints
+@api_router.post("/analyze-trope-risk")
+async def analyze_trope_risk_endpoint(request: dict):
+    """Analyze character for trope usage and freshness with Ollama enhancement"""
+    try:
+        from enhanced_trope_meter import get_trope_risk_meter
+        
+        character_data = request.get("character_data", {})
+        
+        if not character_data:
+            raise HTTPException(status_code=400, detail="Character data required")
+        
+        # Analyze tropes
+        meter = get_trope_risk_meter()
+        trope_profile = meter.analyze_character_tropes(character_data)
+        
+        # Enhance suggestions using Ollama
+        enhanced_suggestions = await enhance_trope_suggestions_with_ollama(
+            trope_profile.improvement_suggestions,
+            trope_profile.trope_analyses,
+            character_data
+        )
+        
+        # Convert to dict for JSON response
+        result = {
+            "character_id": trope_profile.character_id,
+            "overall_freshness_score": round(trope_profile.overall_freshness_score, 3),
+            "marcus_level_rating": round(trope_profile.marcus_level_rating, 3),
+            "freshness_rating": _get_freshness_rating(trope_profile.overall_freshness_score),
+            "trope_analyses": [
+                {
+                    "trope_name": analysis.trope_name,
+                    "cliche_score": round(analysis.cliché_score, 3),
+                    "freshness_level": analysis.freshness_level.value,
+                    "usage_frequency": analysis.usage_frequency,
+                    "subversion_suggestions": analysis.subversion_suggestions[:3],  # Limit for UI
+                    "combination_alternatives": analysis.combination_alternatives[:2]
+                } for analysis in trope_profile.trope_analyses
+            ],
+            "risk_factors": trope_profile.risk_factors,
+            "strength_factors": trope_profile.strength_factors,
+            "improvement_suggestions": enhanced_suggestions,
+            "marcus_adaptations": [
+                "Replace simple motivation with complex systemic goals",
+                "Add realistic business/political constraints",
+                "Show character using strategy over force",
+                "Explore moral ambiguity in character's methods"
+            ]
+        }
+        
+        return {"trope_analysis": result, "success": True, "message": "Trope analysis completed successfully"}
+        
+    except Exception as e:
+        logger.error(f"Trope analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Trope analysis failed: {str(e)}")
+
+def _get_freshness_rating(score: float) -> str:
+    """Convert freshness score to human-readable rating"""
+    if score >= 0.8:
+        return "Highly Original"
+    elif score >= 0.6:
+        return "Fresh and Engaging"
+    elif score >= 0.4:
+        return "Moderately Fresh"
+    elif score >= 0.2:
+        return "Somewhat Clichéd"
+    else:
+        return "Needs Innovation"
+
+async def enhance_trope_suggestions_with_ollama(base_suggestions: List[str], trope_analyses, character_data: Dict) -> List[str]:
+    """Use Ollama to enhance and personalize trope improvement suggestions"""
+    try:
+        # Create character and trope context
+        character_context = f"""
+Character Overview:
+- Origin: {character_data.get('character_origin', 'Unknown')}
+- Power Source: {character_data.get('power_source', 'Unknown')}
+- Archetype Tags: {', '.join(character_data.get('archetype_tags', []))}
+- Social Status: {character_data.get('social_status', 'Unknown')}
+
+Trope Analysis Summary:
+- Total Tropes Found: {len(trope_analyses)}
+- High-Risk Tropes: {', '.join([t.trope_name for t in trope_analyses if t.cliché_score > 0.6])}
+- Fresh Elements: {', '.join([t.trope_name for t in trope_analyses if t.cliché_score < 0.3])}
+
+Base Suggestions: {', '.join(base_suggestions)}
+"""
+        
+        prompt = f"""Based on the character analysis and identified tropes, provide 3-5 specific, actionable suggestions to make this character more original and engaging. Focus on concrete character development advice rather than generic writing tips.
+
+{character_context}
+
+Provide suggestions that:
+1. Address the highest-risk clichéd elements
+2. Build on the character's existing fresh elements
+3. Offer specific narrative possibilities
+4. Consider the character's genre and context
+5. Are practical for writers to implement
+
+Enhanced suggestions:"""
+        
+        response = await ollama_text_generation(prompt, temperature=0.7)
+        
+        # Parse the response into a list of suggestions
+        enhanced_suggestions = []
+        for line in response.split('\n'):
+            line = line.strip()
+            if line and (line.startswith('-') or line.startswith('•') or line.startswith('1.') or line.startswith('2.') or line.startswith('3.') or line.startswith('4.') or line.startswith('5.')):
+                # Clean up the suggestion text
+                suggestion = re.sub(r'^[-•\d.]+\s*', '', line)
+                if suggestion:
+                    enhanced_suggestions.append(suggestion)
+        
+        # If parsing failed, return the original suggestions
+        if not enhanced_suggestions:
+            return base_suggestions
+        
+        return enhanced_suggestions[:5]  # Limit to 5 suggestions
+        
+    except Exception as e:
+        logger.warning(f"Failed to enhance suggestions with Ollama: {e}")
+        return base_suggestions
+
 # Initialize systems on startup
 @app.on_event("startup")
 async def startup_event():
