@@ -867,7 +867,6 @@ GEOGRAPHIC_CONTEXTS = {
 async def get_enhanced_character_analysis(image_data: bytes, filename: str, context: Dict) -> Dict[str, Any]:
     """Enhanced character analysis with comprehensive parameters"""
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage, ImageContent
         
         # Build context-aware prompt
         origin_desc = CHARACTER_ORIGINS.get(context["origin"], {}).get("description", "human")
