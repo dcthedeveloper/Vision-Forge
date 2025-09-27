@@ -78,8 +78,28 @@ const POWER_SOURCES = {
   "neural_enhancement": "Neural Network Optimization",
   "self_evolution": "Conscious Self-Evolution",
   "symbiotic_merger": "Symbiotic Entity Merger",
-  "dimensional_exposure": "Dimensional Energy Exposure"
+  "dimensional_exposure": "Dimensional Energy Exposure",
+  // OP Mode exclusive sources
+  "reality_breach": "🔥 Reality Breach Event",
+  "omnipotent_artifact": "🔥 Omnipotent Artifact Fusion",
+  "conceptual_embodiment": "🔥 Conceptual Force Embodiment",
+  "narrative_transcendence": "🔥 Story-Breaking Transcendence"
 };
+
+const OP_CHARACTER_ORIGINS = {
+  "narrative_breaker": { name: "🔥 Narrative Breaker", description: "Character so powerful they break story logic" },
+  "meta_aware": { name: "🔥 Meta-Aware Entity", description: "Knows they're in a story and exploits it" },
+  "power_creep": { name: "🔥 Power Creep Incarnate", description: "Constantly escalating beyond all limits" },
+  "deus_ex_machina": { name: "🔥 Deus Ex Machina", description: "Appears to solve impossible problems" },
+  "reality_warper": { name: "🔥 Reality Warper", description: "Reshapes existence on a whim" },
+  "omnipotent_being": { name: "🔥 Omnipotent Entity", description: "Unlimited power in all aspects" }
+};
+
+const OP_ARCHETYPE_TAGS = [
+  "🔥 Story Breaker", "🔥 Power Scaling Destroyer", "🔥 Invincibility Incarnate",
+  "🔥 Plot Armor Personified", "🔥 Balance Wrecker", "🔥 Meta Gaming God",
+  "🔥 Narrative Cancer", "🔥 Escalation Engine", "🔥 Impossibility Made Real"
+];
 
 const POWER_EVOLUTION_STAGES = {
   "initial": "Initial Enhancement",
