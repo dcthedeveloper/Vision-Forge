@@ -16,7 +16,7 @@ from PIL import Image
 import io
 
 # Test configuration
-BACKEND_URL = "https://storycraft-102.preview.emergentagent.com/api"
+BACKEND_URL = "https://character-craft-5.preview.emergentagent.com/api"
 TEST_IMAGE_SIZE = (256, 256)
 
 class VisionForgeBackendTester:

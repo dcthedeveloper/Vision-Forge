@@ -10,7 +10,7 @@ import json
 import sys
 
 # Test configuration
-BACKEND_URL = "https://storycraft-102.preview.emergentagent.com/api"
+BACKEND_URL = "https://character-craft-5.preview.emergentagent.com/api"
 
 class Phase3ATester:
     def __init__(self):

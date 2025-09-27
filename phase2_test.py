@@ -7,7 +7,7 @@ import asyncio
 import aiohttp
 import json
 
-BACKEND_URL = "https://storycraft-102.preview.emergentagent.com/api"
+BACKEND_URL = "https://character-craft-5.preview.emergentagent.com/api"
 
 async def test_phase2_features():
     """Test Phase 2 features quickly"""

@@ -6,7 +6,7 @@ import requests
 import json
 import time
 
-BACKEND_URL = "https://storycraft-102.preview.emergentagent.com/api"
+BACKEND_URL = "https://character-craft-5.preview.emergentagent.com/api"
 
 def test_endpoint(name, method, url, data=None, timeout=30):
     """Test a single endpoint with timeout"""

@@ -9,7 +9,7 @@ import aiohttp
 import json
 import sys
 
-BACKEND_URL = "https://storycraft-102.preview.emergentagent.com/api"
+BACKEND_URL = "https://character-craft-5.preview.emergentagent.com/api"
 
 async def test_power_system_themes():
     """Test power system themes endpoint"""
