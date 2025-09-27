@@ -28,6 +28,10 @@ function App() {
     toast.success("Character analysis completed!");
   }, []);
 
+  const handleSettingsChange = useCallback((newSettings) => {
+    setAiSettings(newSettings);
+  }, []);
+
   return (
     <div className="App min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-900">
       <BrowserRouter>
