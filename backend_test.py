@@ -537,18 +537,25 @@ class VisionForgeBackendTester:
     
     async def run_all_tests(self):
         """Run all backend tests"""
-        print("🚀 Starting VisionForge Backend Tests with Ollama Integration")
+        print("🚀 Starting VisionForge Backend Tests - Phase 2 Features")
         print(f"Testing against: {BACKEND_URL}")
         print("=" * 60)
         
-        # Run tests in order of importance
+        # Run existing tests first
+        print("📋 EXISTING FEATURES:")
         await self.test_health_check()
         await self.test_get_genres()
         await self.test_ollama_models_availability()
         await self.test_text_generation()
         await self.test_style_analysis()
-        await self.test_image_analysis()  # Most complex test last
+        await self.test_image_analysis()  # Most complex test
         await self.test_analyses_history()
+        
+        print("\n🆕 PHASE 2 FEATURES:")
+        # Run Phase 2 tests
+        await self.test_beat_sheet_types()
+        await self.test_beat_sheet_generation()
+        await self.test_trope_risk_analysis()
         
         # Summary
         print("\n" + "=" * 60)
@@ -562,6 +569,16 @@ class VisionForgeBackendTester:
         print(f"Passed: {passed}")
         print(f"Failed: {total - passed}")
         print(f"Success Rate: {(passed/total)*100:.1f}%")
+        
+        # Separate existing vs Phase 2 results
+        existing_tests = [r for r in self.test_results if not any(phase2 in r["test"] for phase2 in ["Beat Sheet", "Trope Risk"])]
+        phase2_tests = [r for r in self.test_results if any(phase2 in r["test"] for phase2 in ["Beat Sheet", "Trope Risk"])]
+        
+        existing_passed = sum(1 for r in existing_tests if r["success"])
+        phase2_passed = sum(1 for r in phase2_tests if r["success"])
+        
+        print(f"\n📋 EXISTING FEATURES: {existing_passed}/{len(existing_tests)} passed")
+        print(f"🆕 PHASE 2 FEATURES: {phase2_passed}/{len(phase2_tests)} passed")
         
         if total - passed > 0:
             print("\n❌ FAILED TESTS:")
