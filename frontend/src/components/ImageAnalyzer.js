@@ -560,23 +560,28 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated, aiSettings = { 
               </div>
 
               {/* Selected Configuration Summary */}
-              <div className="bg-slate-800/50 rounded-lg p-4">
-                <h4 className="text-sm font-medium text-indigo-300 mb-3">Marcus-Style Character Configuration:</h4>
+              <div className="bg-slate-700/60 rounded-lg p-4 border border-slate-600">
+                <h4 className="text-sm font-medium text-white mb-3">Character Configuration Summary:</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                   <div>
-                    <span className="text-indigo-300 font-medium">Universe:</span> {GENRES[selectedGenre]}
+                    <span className="text-indigo-200 font-medium">Universe:</span> 
+                    <span className="text-white ml-2">{GENRES[selectedGenre]}</span>
                   </div>
                   <div>
-                    <span className="text-indigo-300 font-medium">Origin:</span> {CHARACTER_ORIGINS[characterOrigin].name}
+                    <span className="text-indigo-200 font-medium">Origin:</span> 
+                    <span className="text-white ml-2">{CHARACTER_ORIGINS[characterOrigin].name}</span>
                   </div>
                   <div>
-                    <span className="text-indigo-300 font-medium">Status:</span> {SOCIAL_STATUS[socialStatus]}
+                    <span className="text-indigo-200 font-medium">Status:</span> 
+                    <span className="text-white ml-2">{SOCIAL_STATUS[socialStatus]}</span>
                   </div>
                   <div>
-                    <span className="text-indigo-300 font-medium">Power Source:</span> {POWER_SOURCES[powerSource]}
+                    <span className="text-indigo-200 font-medium">Power Source:</span> 
+                    <span className="text-white ml-2">{POWER_SOURCES[powerSource]}</span>
                   </div>
                   <div>
-                    <span className="text-indigo-300 font-medium">Evolution:</span> {POWER_EVOLUTION_STAGES[evolutionStage]}
+                    <span className="text-indigo-200 font-medium">Evolution:</span> 
+                    <span className="text-white ml-2">{POWER_EVOLUTION_STAGES[evolutionStage]}</span>
                   </div>
                   <div>
                     <span className="text-indigo-300 font-medium">Location:</span> {GEOGRAPHIC_CONTEXTS[geographicContext]}
