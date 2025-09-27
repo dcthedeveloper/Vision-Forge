@@ -102,7 +102,7 @@
 # Testing Data - Main Agent and testing sub agent both should log testing data below this section
 #====================================================================================================
 
-user_problem_statement: "Integrate Ollama for all AI functionality within VisionForge. Replace existing emergentintegrations (OpenAI/Claude) setup with Ollama for local/self-hosted LLM integration while maintaining existing functionality and completing Phase 2 features (Beat-Sheet Generator, Enhanced Trope Risk Meter)."
+user_problem_statement: "Implement Character Persistence & Cross-Tool Continuity in VisionForge. When a character is analyzed in the Image Analyzer, it should persist across all other tabs (Style Coach, Beat Sheet Generator, Trope Risk Meter, etc.) so users can continue tweaking and working with the same character in different contexts without losing the character data."
 
 backend:
   - task: "Ollama Integration Setup"
