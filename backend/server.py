@@ -549,10 +549,57 @@ async def analyze_image(
             "tags": tags.split(',') if tags else []
         }
         
-        # Generate Marcus-style sophisticated character analysis
-        character_analysis = await create_sophisticated_character_analysis(
+        # Enhanced character analysis with rule checking and continuity
+        character_analysis = await create_enhanced_character_analysis(
             image_data, file.filename, character_context
         )
+        
+        # Run rule checks on the character
+        rule_violations = check_character_rules(character_analysis)
+        
+        # Store character lore in vector DB for continuity tracking
+        vector_db = get_vector_db()
+        try:
+            await vector_db.store_character_lore(
+                character_analysis["id"],
+                character_analysis["persona_summary"],
+                "persona",
+                character_analysis.get("archetype_tags", [])
+            )
+            
+            for trait in character_analysis.get("traits", []):
+                await vector_db.store_character_lore(
+                    character_analysis["id"],
+                    trait["trait"],
+                    "trait",
+                    [trait["category"]]
+                )
+        except Exception as e:
+            logger.warning(f"Vector DB storage failed: {e}")
+        
+        # Add rule violations to response
+        character_analysis["rule_violations"] = [
+            {
+                "rule_name": v.rule_name,
+                "severity": v.severity.value,
+                "message": v.message,
+                "explanation": v.explanation,
+                "quick_fix": v.quick_fix,
+                "suggested_replacement": v.suggested_replacement
+            } for v in rule_violations
+        ]
+        
+        # Get character recommendations from knowledge graph
+        try:
+            kg = get_knowledge_graph()
+            recommendations = kg.get_character_recommendations({
+                "archetype": character_context.get("tags", [None])[0] if character_context.get("tags") else None,
+                "origin": character_context["origin"]
+            })
+            character_analysis["recommendations"] = recommendations
+        except Exception as e:
+            logger.warning(f"Knowledge graph recommendations failed: {e}")
+            character_analysis["recommendations"] = {}
         
         # Store in database
         await db.character_analyses.insert_one(character_analysis.copy())
