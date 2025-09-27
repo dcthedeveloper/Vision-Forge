@@ -251,9 +251,13 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated, aiSettings = { 
         const analysisData = response.data.analysis || response.data;
         setAnalysis(analysisData);
         setCurrentCharacter(analysisData);
+        
+        // Reload character context to update global state
+        await loadCurrentCharacter();
+        
         onAnalysisComplete?.();
         onCharacterCreated?.(analysisData);
-        toast.success("Character analysis completed!");
+        toast.success("Character analysis completed and saved to session!");
       } else {
         throw new Error(response.data.message || "Analysis failed");
       }
