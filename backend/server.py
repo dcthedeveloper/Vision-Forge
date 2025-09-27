@@ -140,11 +140,9 @@ GENRES = {
 async def get_genre_adapted_analysis(visual_data: Dict, genre: str, character_context: Optional[Dict] = None) -> Dict[str, Any]:
     """Adapt character analysis based on chosen genre/universe"""
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
-        
         genre_info = GENRES.get(genre, GENRES["urban_realistic"])
         
-        system_prompt = f"""You are a {genre_info['name']} character expert. Adapt this character analysis to fit the {genre_info['name']} universe.
+        prompt = f"""You are a {genre_info['name']} character expert. Adapt this character analysis to fit the {genre_info['name']} universe.
 
 GENRE CONTEXT:
 - Power Style: {genre_info['power_style']}
@@ -172,24 +170,18 @@ Return JSON:
   "universe_connections": "How they might connect to existing {genre_info['name']} lore"
 }}
 
-Make it feel authentic to {genre_info['name']} while respecting the character's visual appearance."""
+Make it feel authentic to {genre_info['name']} while respecting the character's visual appearance.
+
+Context to adapt:
+Visual Analysis: {visual_data}"""
         
-        chat = LlmChat(
-            api_key=os.environ['EMERGENT_LLM_KEY'],
-            session_id=f"genre-adapt-{uuid.uuid4()}",
-            system_message=system_prompt
-        ).with_model("anthropic", "claude-sonnet-4-20250514")
-        
-        context_text = f"Visual Analysis: {visual_data}"
         if character_context:
-            context_text += f"\nExisting Character Context: {character_context}"
+            prompt += f"\nExisting Character Context: {character_context}"
             
-        message = UserMessage(
-            text=f"Adapt this character for {genre_info['name']}: {context_text}"
-        )
+        prompt += f"\n\nAdapt this character for {genre_info['name']}:"
         
-        response = await chat.send_message(message)
-        return await parse_json_response(str(response))
+        response = await ollama_text_generation(prompt, temperature=0.7)
+        return await parse_json_response(response)
         
     except Exception as e:
         logger.error(f"Genre adaptation failed: {e}")
