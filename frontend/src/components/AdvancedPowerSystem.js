@@ -38,7 +38,7 @@ const AdvancedPowerSystem = ({ aiSettings = { provider: 'ollama', safetyLevel: '
     try {
       const requestData = {
         character_context: characterContext,
-        narrative_focus: selectedTheme || undefined,
+        narrative_focus: selectedTheme && selectedTheme !== 'none' ? selectedTheme : undefined,
         complexity_level: complexityLevel
       };
 
