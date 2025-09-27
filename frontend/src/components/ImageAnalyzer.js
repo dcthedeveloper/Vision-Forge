@@ -442,18 +442,31 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
                 {/* Power Source */}
                 <div>
                   <label className="block text-sm font-medium text-indigo-300 mb-2">
-                    Power Source
+                    Power Source {opMode && <span className="text-red-300">🔥 OP MODE</span>}
                   </label>
                   <Select value={powerSource} onValueChange={setPowerSource}>
-                    <SelectTrigger className="bg-slate-800 border-indigo-500/30 text-white">
+                    <SelectTrigger className={`bg-slate-800 border-indigo-500/30 text-white ${
+                      opMode ? 'border-red-500/50 shadow-red-500/25' : ''
+                    }`}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-indigo-500/30">
-                      {Object.entries(POWER_SOURCES).map(([key, name]) => (
-                        <SelectItem key={key} value={key} className="text-white hover:bg-slate-700">
-                          {name}
-                        </SelectItem>
-                      ))}
+                      {Object.entries(POWER_SOURCES).map(([key, name]) => {
+                        const isOpPower = name.includes('🔥');
+                        if (isOpPower && !opMode) return null; // Hide OP powers unless in OP mode
+                        
+                        return (
+                          <SelectItem 
+                            key={key} 
+                            value={key} 
+                            className={`hover:bg-slate-700 ${
+                              isOpPower ? 'text-red-300' : 'text-white'
+                            }`}
+                          >
+                            {name}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
