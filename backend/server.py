@@ -596,10 +596,60 @@ async def analyze_image(
         # Store in database
         await db.character_analyses.insert_one(character_analysis.copy())
         
+        # Save character to session for cross-tool persistence
+        try:
+            vc_engine = get_version_control_engine()
+            
+            # Create prompt context for version tracking
+            prompt_context = PromptContext(
+                prompt_text=f"Image analysis of {file.filename}",
+                ai_provider="ollama",
+                model_name="llava:7b",
+                temperature=0.7,
+                safety_level="moderate",
+                genre=genre,
+                character_context=character_analysis,
+                additional_parameters={
+                    "tool_name": "image_analyzer",
+                    "op_mode": character_context["op_mode"],
+                    **character_context
+                }
+            )
+            
+            # Create initial version for this character
+            content_id, version_id = vc_engine.create_initial_version(
+                content_type=ContentType.CHARACTER_ANALYSIS,
+                content_data=character_analysis,
+                prompt_context=prompt_context,
+                description=f"Initial character analysis from Image Analyzer"
+            )
+            
+            # Save character session
+            session_data = {
+                "character_id": character_analysis["id"],
+                "content_id": content_id,
+                "current_version_id": version_id,
+                "character_data": character_analysis,
+                "last_tool": "image_analyzer",
+                "updated_at": datetime.utcnow().isoformat(),
+                "created_at": datetime.utcnow().isoformat()
+            }
+            
+            await db.character_sessions.update_one(
+                {"character_id": character_analysis["id"]},
+                {"$set": session_data},
+                upsert=True
+            )
+            
+            logger.info(f"Character saved to session: {character_analysis['id']}")
+            
+        except Exception as e:
+            logger.warning(f"Failed to save character to session: {e}")
+        
         return {
             "analysis": character_analysis,
             "success": True,
-            "message": f"{'OP/Broken' if character_context['op_mode'] else 'Sophisticated'} {origin} character created"
+            "message": f"{'OP/Broken' if character_context['op_mode'] else 'Sophisticated'} {origin} character created and saved to session"
         }
         
     except HTTPException:
