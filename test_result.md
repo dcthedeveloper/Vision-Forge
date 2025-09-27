@@ -228,8 +228,8 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Enhanced Trope Risk Meter"
-    - "Advanced Power System Framework"
+    - "Continuity Engine Implementation"
+    - "Enhanced Style Coach with Educational Rationale"
   stuck_tasks: 
     - "Enhanced Trope Risk Meter"
   test_all: false
