@@ -23,6 +23,8 @@ from ollama_client import get_text_generation as ollama_text_generation, get_ima
 from hybrid_ai_client import get_hybrid_ai_client, AIProvider
 from content_filter import get_content_filter, ContentSafetyLevel
 from power_system_framework import get_power_system_generator
+from continuity_engine import get_continuity_engine
+from enhanced_style_coach import get_enhanced_style_coach
 
 
 ROOT_DIR = Path(__file__).parent
