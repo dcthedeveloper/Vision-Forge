@@ -11,6 +11,7 @@ import { Checkbox } from "./ui/checkbox";
 import { toast } from "sonner";
 import { Upload, ImageIcon, Sparkles, Zap, Eye, Plus, ArrowRight, Settings, Shield } from "lucide-react";
 import ContinuityLinter from "./ContinuityLinter";
+import { useCharacter } from "../contexts/CharacterContext";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
