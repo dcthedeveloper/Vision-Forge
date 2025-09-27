@@ -426,7 +426,8 @@ class VisionForgeBackendTester:
             self.log_result("Beat Sheet Generation (Overall)", False, f"Test setup error: {str(e)}")
     
     async def test_trope_risk_analysis(self):
-        """Test trope risk analysis at /api/analyze-trope-risk"""
+        """Test trope risk analysis at /api/analyze-trope-risk - CRITICAL: Test timeout fixes"""
+        import time
         try:
             # Test with sophisticated Marcus-style character
             sophisticated_character = {
@@ -472,9 +473,20 @@ class VisionForgeBackendTester:
                 try:
                     test_payload = {"character_data": character_data}
                     
+                    # CRITICAL: Monitor response time to verify timeout fixes
+                    start_time = time.time()
+                    
+                    # Set client timeout to 35 seconds (should complete within 30 seconds per requirement)
+                    timeout = aiohttp.ClientTimeout(total=35)
+                    
                     async with self.session.post(f"{BACKEND_URL}/analyze-trope-risk",
                                                json=test_payload,
-                                               headers={"Content-Type": "application/json"}) as response:
+                                               headers={"Content-Type": "application/json"},
+                                               timeout=timeout) as response:
+                        
+                        end_time = time.time()
+                        response_time = end_time - start_time
+                        
                         if response.status == 200:
                             data = await response.json()
                             if data.get("success") and "trope_analysis" in data:
@@ -495,39 +507,55 @@ class VisionForgeBackendTester:
                                 freshness_score = analysis.get("overall_freshness_score", 0)
                                 marcus_rating = analysis.get("marcus_level_rating", 0)
                                 
-                                if has_required and valid_tropes:
-                                    # Verify expected results
-                                    if char_name == "Sophisticated Character":
-                                        # Should have higher freshness and Marcus rating
-                                        expected_fresh = freshness_score > 0.5
-                                        expected_marcus = marcus_rating > 0.5
-                                    else:
-                                        # Clichéd character should have lower scores
-                                        expected_fresh = freshness_score < 0.7  # Still might be somewhat fresh
-                                        expected_marcus = marcus_rating < 0.8   # Less sophisticated
-                                    
+                                # CRITICAL: Verify timeout fix - should complete within 30 seconds
+                                timeout_fixed = response_time <= 30.0
+                                
+                                if has_required and valid_tropes and timeout_fixed:
                                     self.log_result(f"Trope Risk Analysis ({char_name})", True, 
-                                                  "Analysis completed successfully", {
+                                                  f"Analysis completed in {response_time:.1f}s (timeout fix working)", {
+                                                      "response_time_seconds": round(response_time, 2),
+                                                      "timeout_requirement_met": timeout_fixed,
                                                       "freshness_score": round(freshness_score, 3),
                                                       "marcus_rating": round(marcus_rating, 3),
                                                       "freshness_rating": analysis.get("freshness_rating"),
                                                       "tropes_found": len(trope_analyses),
                                                       "has_suggestions": len(analysis.get("improvement_suggestions", [])) > 0
                                                   })
+                                elif not timeout_fixed:
+                                    self.log_result(f"Trope Risk Analysis ({char_name})", False, 
+                                                  f"TIMEOUT ISSUE: Response took {response_time:.1f}s (>30s limit)", {
+                                                      "response_time_seconds": round(response_time, 2),
+                                                      "timeout_requirement_met": False,
+                                                      "timeout_limit": 30.0
+                                                  })
                                 else:
                                     self.log_result(f"Trope Risk Analysis ({char_name})", False, 
-                                                  "Invalid analysis structure", {
+                                                  f"Invalid analysis structure (completed in {response_time:.1f}s)", {
+                                                      "response_time_seconds": round(response_time, 2),
                                                       "has_required_fields": has_required,
                                                       "valid_tropes": valid_tropes,
                                                       "tropes_count": len(trope_analyses)
                                                   })
                             else:
                                 self.log_result(f"Trope Risk Analysis ({char_name})", False, 
-                                              "Invalid response format", data)
+                                              f"Invalid response format (completed in {response_time:.1f}s)", {
+                                                  "response_time_seconds": round(response_time, 2),
+                                                  "response_data": data
+                                              })
                         else:
                             error_text = await response.text()
                             self.log_result(f"Trope Risk Analysis ({char_name})", False, 
-                                          f"HTTP {response.status}", {"error": error_text})
+                                          f"HTTP {response.status} after {response_time:.1f}s", {
+                                              "response_time_seconds": round(response_time, 2),
+                                              "error": error_text
+                                          })
+                            
+                except asyncio.TimeoutError:
+                    self.log_result(f"Trope Risk Analysis ({char_name})", False, 
+                                  "CRITICAL: Request timed out (>35s) - timeout fixes not working", {
+                                      "timeout_seconds": 35,
+                                      "issue": "Ollama enhancement still causing delays"
+                                  })
                 except Exception as e:
                     self.log_result(f"Trope Risk Analysis ({char_name})", False, 
                                   f"Request error: {str(e)}")
