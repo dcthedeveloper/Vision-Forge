@@ -802,10 +802,14 @@ async def analyze_style(request: dict):
 
 @api_router.get("/analyses")
 async def get_character_analyses():
-    """Get all character profiles"""
+    """Get all character analyses"""
     try:
-        analyses = await db.character_profiles.find().sort("created_at", -1).to_list(100)
-        return [CharacterProfile(**analysis) for analysis in analyses]
+        analyses = await db.character_analyses.find().sort("created_at", -1).to_list(100)
+        # Remove MongoDB _id field for JSON serialization
+        for analysis in analyses:
+            if '_id' in analysis:
+                del analysis['_id']
+        return analyses
     except Exception as e:
         logger.error(f"Failed to fetch analyses: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch analyses")
