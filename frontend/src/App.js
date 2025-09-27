@@ -51,28 +51,31 @@ function App() {
               <div className="max-w-7xl mx-auto">
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                   <TabsList className="flex w-full justify-center mb-8 h-auto flex-wrap gap-1">
-                    <TabsTrigger value="image-analyzer" className="text-xs px-3 py-2 flex-shrink-0">
+                    <TabsTrigger value="image-analyzer" className="text-xs px-2 py-2 flex-shrink-0">
                       Image Analyzer
                     </TabsTrigger>
-                    <TabsTrigger value="text-generator" className="text-xs px-3 py-2 flex-shrink-0">
+                    <TabsTrigger value="text-generator" className="text-xs px-2 py-2 flex-shrink-0">
                       Text Generator
                     </TabsTrigger>
-                    <TabsTrigger value="style-coach" className="text-xs px-3 py-2 flex-shrink-0">
+                    <TabsTrigger value="style-coach" className="text-xs px-2 py-2 flex-shrink-0">
                       Style Coach
                     </TabsTrigger>
-                    <TabsTrigger value="trope-builder" className="text-xs px-3 py-2 flex-shrink-0">
+                    <TabsTrigger value="trope-builder" className="text-xs px-2 py-2 flex-shrink-0">
                       Trope Builder
                     </TabsTrigger>
-                    <TabsTrigger value="beat-sheet" className="text-xs px-3 py-2 flex-shrink-0">
+                    <TabsTrigger value="beat-sheet" className="text-xs px-2 py-2 flex-shrink-0">
                       Beat Sheets
                     </TabsTrigger>
-                    <TabsTrigger value="trope-meter" className="text-xs px-3 py-2 flex-shrink-0">
+                    <TabsTrigger value="trope-meter" className="text-xs px-2 py-2 flex-shrink-0">
                       Trope Meter
                     </TabsTrigger>
-                    <TabsTrigger value="settings" className="text-xs px-3 py-2 flex-shrink-0">
+                    <TabsTrigger value="power-system" className="text-xs px-2 py-2 flex-shrink-0">
+                      Power Systems
+                    </TabsTrigger>
+                    <TabsTrigger value="settings" className="text-xs px-2 py-2 flex-shrink-0">
                       AI Settings
                     </TabsTrigger>
-                    <TabsTrigger value="history" className="text-xs px-3 py-2 flex-shrink-0">
+                    <TabsTrigger value="history" className="text-xs px-2 py-2 flex-shrink-0">
                       History
                     </TabsTrigger>
                   </TabsList>
