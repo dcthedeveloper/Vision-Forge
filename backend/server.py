@@ -980,7 +980,127 @@ async def analyze_style(request: dict):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@api_router.get("/analyses")
+@api_router.post("/check-continuity")
+async def check_continuity(request: dict):
+    """Check continuity and rule violations for character content"""
+    try:
+        character_id = request.get("character_id")
+        new_content = request.get("content", "")
+        content_type = request.get("content_type", "general")
+        
+        if not character_id or not new_content:
+            raise HTTPException(status_code=400, detail="character_id and content are required")
+        
+        # Check for continuity conflicts
+        vector_db = get_vector_db()
+        continuity_conflicts = await vector_db.check_continuity_conflicts(
+            character_id, new_content, content_type
+        )
+        
+        # Check style rules
+        style_violations = check_style_rules(new_content, content_type)
+        
+        # If this is character data, run character rules too
+        character_violations = []
+        if content_type == "character_update":
+            character_data = request.get("character_data", {})
+            character_violations = check_character_rules(character_data)
+        
+        return {
+            "continuity_conflicts": [
+                {
+                    "conflict_type": c.conflict_type,
+                    "severity": c.severity,
+                    "existing_content": c.existing_content,
+                    "new_content": c.new_content,
+                    "similarity_score": c.similarity_score,
+                    "suggested_resolution": c.suggested_resolution
+                } for c in continuity_conflicts
+            ],
+            "style_violations": [
+                {
+                    "rule_name": v.rule_name,
+                    "severity": v.severity.value,
+                    "message": v.message,
+                    "explanation": v.explanation,
+                    "quick_fix": v.quick_fix,
+                    "affected_content": v.affected_content,
+                    "suggested_replacement": v.suggested_replacement
+                } for v in style_violations
+            ],
+            "character_violations": [
+                {
+                    "rule_name": v.rule_name,
+                    "severity": v.severity.value,
+                    "message": v.message,
+                    "explanation": v.explanation,
+                    "quick_fix": v.quick_fix,
+                    "suggested_replacement": v.suggested_replacement
+                } for v in character_violations
+            ],
+            "success": True
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Continuity check failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Continuity check failed: {str(e)}")
+
+@api_router.get("/rule-engine/status")
+async def get_rule_engine_status():
+    """Get status and capabilities of the rule engine"""
+    try:
+        engine = get_rule_engine()
+        rule_summary = engine.get_rule_summary()
+        
+        return {
+            "status": "active",
+            "rule_summary": rule_summary,
+            "capabilities": [
+                "Power cost validation",
+                "Character consistency checking", 
+                "Origin-power compatibility",
+                "Timeline consistency",
+                "Cliché detection",
+                "Show-don't-tell analysis",
+                "Continuity conflict detection"
+            ],
+            "version": "1.0.0-phase1"
+        }
+        
+    except Exception as e:
+        logger.error(f"Rule engine status check failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Rule engine status failed: {str(e)}")
+
+# Initialize systems on startup
+@app.on_event("startup")
+async def startup_event():
+    """Initialize all VisionForge systems"""
+    logger.info("Initializing VisionForge systems...")
+    
+    # Initialize knowledge graph (graceful failure in dev)
+    try:
+        initialize_knowledge_graph()
+        logger.info("✅ Knowledge Graph initialized")
+    except Exception as e:
+        logger.warning(f"⚠️ Knowledge Graph initialization failed (dev mode): {e}")
+    
+    # Initialize vector database (graceful failure in dev)
+    try:
+        initialize_vector_db()
+        logger.info("✅ Vector Database initialized")
+    except Exception as e:
+        logger.warning(f"⚠️ Vector Database initialization failed (dev mode): {e}")
+    
+    # Initialize rule engine
+    try:
+        get_rule_engine()
+        logger.info("✅ Rule Engine initialized")
+    except Exception as e:
+        logger.error(f"❌ Rule Engine initialization failed: {e}")
+    
+    logger.info("🚀 VisionForge enhanced systems ready!")
 async def get_character_analyses():
     """Get all character analyses"""
     try:
