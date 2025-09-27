@@ -9,7 +9,8 @@ import { Separator } from "./ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Checkbox } from "./ui/checkbox";
 import { toast } from "sonner";
-import { Upload, ImageIcon, Sparkles, Zap, Eye, Plus, ArrowRight, Settings } from "lucide-react";
+import { Upload, ImageIcon, Sparkles, Zap, Eye, Plus, ArrowRight, Settings, Shield } from "lucide-react";
+import ContinuityLinter from "./ContinuityLinter";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
