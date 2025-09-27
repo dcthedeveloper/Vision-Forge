@@ -688,6 +688,15 @@ const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
               </div>
             </div>
 
+            {/* Continuity Linter Integration */}
+            <Separator className="bg-indigo-500/30" />
+            
+            <ContinuityLinter 
+              characterId={currentCharacter.id}
+              characterData={currentCharacter}
+              onViolationsUpdate={setRuleViolations}
+            />
+
             {/* Character Classification Summary */}
             <div className="bg-slate-700/30 rounded-lg p-4">
               <h4 className="text-sm font-medium text-slate-300 mb-3">Character Classification</h4>
