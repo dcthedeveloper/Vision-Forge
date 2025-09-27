@@ -1697,6 +1697,228 @@ Adapt this character for {genre_info['name']}:"""
         logger.error(f"Genre adaptation failed: {e}")
         return {}
 
+# Advanced Power System Endpoints
+@api_router.post("/generate-power-system")
+async def generate_advanced_power_system(request: dict):
+    """Generate sophisticated power system using extracted patterns"""
+    try:
+        character_context = request.get("character_context", {})
+        narrative_focus = request.get("narrative_focus")  # e.g., "identity_crisis", "power_corruption"
+        complexity_level = request.get("complexity_level", "moderate")  # simple, moderate, complex
+        
+        generator = get_power_system_generator()
+        power_system = generator.generate_power_system(
+            character_context=character_context,
+            narrative_focus=narrative_focus,
+            complexity_level=complexity_level
+        )
+        
+        # Convert to dict for JSON response
+        result = {
+            "power_source": {
+                "type": power_system.source.value,
+                "name": power_system.source.value.replace('_', ' ').title(),
+                "description": _get_source_description(power_system.source)
+            },
+            "mechanic": {
+                "type": power_system.mechanic.value,
+                "name": power_system.mechanic.value.replace('_', ' ').title(),
+                "description": _get_mechanic_description(power_system.mechanic)
+            },
+            "limitations": {
+                "primary": {
+                    "type": power_system.primary_limitation.value,
+                    "name": power_system.primary_limitation.value.replace('_', ' ').title(),
+                    "description": _get_limitation_description(power_system.primary_limitation)
+                },
+                "secondary": {
+                    "type": power_system.secondary_limitation.value if power_system.secondary_limitation else None,
+                    "name": power_system.secondary_limitation.value.replace('_', ' ').title() if power_system.secondary_limitation else None,
+                    "description": _get_limitation_description(power_system.secondary_limitation) if power_system.secondary_limitation else None
+                } if power_system.secondary_limitation else None
+            },
+            "progression": {
+                "type": power_system.progression_model.value,
+                "name": power_system.progression_model.value.replace('_', ' ').title(),
+                "description": _get_progression_description(power_system.progression_model)
+            },
+            "power_metrics": {
+                "raw_power_level": round(power_system.raw_power_level, 2),
+                "control_precision": round(power_system.control_precision, 2),
+                "cost_severity": round(power_system.cost_severity, 2),
+                "social_impact": round(power_system.social_impact, 2),
+                "progression_speed": round(power_system.progression_speed, 2),
+                "uniqueness_factor": round(power_system.uniqueness_factor, 2)
+            },
+            "narrative_elements": {
+                "thematic_resonance": power_system.thematic_resonance,
+                "societal_role": power_system.societal_role,
+                "philosophical_question": power_system.philosophical_question
+            },
+            "creative_suggestions": _generate_creative_applications(power_system)
+        }
+        
+        return {"power_system": result, "success": True, "message": "Advanced power system generated"}
+        
+    except Exception as e:
+        logger.error(f"Power system generation failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Power system generation failed: {str(e)}")
+
+@api_router.get("/power-system-themes")
+async def get_power_system_themes():
+    """Get available narrative themes for power generation"""
+    return {
+        "themes": [
+            {
+                "id": "identity_crisis",
+                "name": "Identity Crisis",
+                "description": "Powers that challenge what it means to be human",
+                "examples": ["Loss of humanity", "Burden of difference", "Normal vs enhanced life"]
+            },
+            {
+                "id": "power_corruption",
+                "name": "Power Corruption",
+                "description": "How abilities can corrupt the user",
+                "examples": ["Absolute power corrupts", "Force over diplomacy", "Isolation from powerless"]
+            },
+            {
+                "id": "inherited_trauma",
+                "name": "Inherited Trauma",
+                "description": "Family legacy of power and suffering",
+                "examples": ["Generational cycles", "Bloodline destiny", "Family burden"]
+            },
+            {
+                "id": "technological_anxiety",
+                "name": "Technological Anxiety", 
+                "description": "Enhancement vs natural evolution",
+                "examples": ["Human vs artificial", "System dependence", "Loss of authenticity"]
+            },
+            {
+                "id": "social_stratification",
+                "name": "Social Stratification",
+                "description": "Powers creating new class systems",
+                "examples": ["Enhanced vs normal", "Fear and regulation", "Privilege and responsibility"]
+            },
+            {
+                "id": "existential_purpose",
+                "name": "Existential Purpose",
+                "description": "Searching for meaning in power",
+                "examples": ["Why me?", "What's my purpose?", "Beyond personal gain"]
+            }
+        ]
+    }
+
+def _get_source_description(source) -> str:
+    """Get user-friendly description of power source"""
+    descriptions = {
+        "genetic_drift": "Natural human evolution and mutation creating new abilities",
+        "chemical_catalyst": "Experimental drugs, serums, or environmental toxins triggering powers",
+        "trauma_awakening": "Extreme stress or emotional crisis unlocking latent potential",
+        "energy_exposure": "Radiation, cosmic forces, or dimensional energy creating changes",
+        "bloodline_inheritance": "Ancient family genetics and hereditary power traditions",
+        "soul_resonance": "Spiritual energy and life force manipulation techniques",
+        "technology_fusion": "Cybernetic enhancement and nanotechnology integration",
+        "entity_contract": "Deals or bonds with otherworldly beings granting abilities",
+        "discipline_mastery": "Powers unlocked through intense training and meditation",
+        "probability_lottery": "Random distribution with no clear scientific explanation"
+    }
+    return descriptions.get(source.value, "Unknown power source")
+
+def _get_mechanic_description(mechanic) -> str:
+    """Get user-friendly description of power mechanic"""
+    descriptions = {
+        "elemental_command": "Control and manipulation of natural forces and elements",
+        "biological_override": "Body modification, accelerated healing, and shapeshifting abilities",
+        "mental_projection": "Telepathy, telekinesis, and mind-based influence powers",
+        "reality_distortion": "Manipulation of time, space, probability, and fundamental laws",
+        "energy_channeling": "Force projection, energy absorption, and power conversion",
+        "sensory_expansion": "Enhanced perception and entirely new sensory capabilities", 
+        "phase_shifting": "Intangibility, dimensional travel, and matter phase control",
+        "power_mimicry": "Copying, absorbing, or temporarily using others' abilities",
+        "manifestation": "Creating objects, summoning entities, or materializing concepts",
+        "systemic_control": "Influencing networks, organizations, and complex systems"
+    }
+    return descriptions.get(mechanic.value, "Unknown power mechanic")
+
+def _get_limitation_description(limitation) -> str:
+    """Get user-friendly description of power limitation"""
+    if not limitation:
+        return None
+        
+    descriptions = {
+        "physical_burnout": "Body degradation, exhaustion, and physical pain from overuse",
+        "mental_fracture": "Psychological strain, memory loss, and gradual mental instability",
+        "temporal_window": "Strict time limits and cooldown periods between uses",
+        "range_restriction": "Limited distance and line-of-sight requirements",
+        "trigger_dependency": "Requires specific emotional states or environmental conditions",
+        "always_active": "Cannot be turned off, creating constant burden and visibility",
+        "resource_hunger": "Demands external fuel, materials, or energy sources",
+        "focus_intensive": "Requires absolute concentration and mental discipline",
+        "social_isolation": "Powers create fear, rejection, and loneliness in relationships",
+        "moral_corruption": "Abilities gradually change personality and ethical outlook"
+    }
+    return descriptions.get(limitation.value, "Unknown limitation")
+
+def _get_progression_description(progression) -> str:
+    """Get user-friendly description of progression model"""
+    descriptions = {
+        "emotional_evolution": "Abilities grow stronger through psychological development and healing",
+        "technical_mastery": "Powers improve through dedicated practice and understanding",
+        "stress_breakthrough": "Crisis situations and extreme pressure unlock new capabilities",
+        "symbiotic_bond": "Abilities develop through relationships and connections with others",
+        "philosophical_depth": "Understanding of purpose and meaning enhances power",
+        "generational_legacy": "Each generation builds upon and improves the family abilities",
+        "systematic_study": "Scientific approach and methodical research advance capabilities",
+        "intuitive_leap": "Sudden, unpredictable breakthroughs in ability and understanding",
+        "sacrifice_unlock": "Growth requires giving up something precious or important",
+        "environmental_sync": "Powers adapt and evolve based on surroundings and challenges"
+    }
+    return descriptions.get(progression.value, "Unknown progression model")
+
+def _generate_creative_applications(power_system) -> List[str]:
+    """Generate specific creative applications for the power system"""
+    applications = []
+    
+    # Base applications on power combination
+    source = power_system.source.value
+    mechanic = power_system.mechanic.value
+    limitation = power_system.primary_limitation.value
+    
+    # Generate 3-5 specific creative applications
+    if mechanic == "reality_distortion" and limitation == "always_active":
+        applications.extend([
+            "Character unknowingly warps reality based on subconscious thoughts and dreams",
+            "Local physics bend around them - clocks run differently, gravity fluctuates",
+            "People's memories of events near the character become unreliable and shifting"
+        ])
+    
+    elif source == "trauma_awakening" and mechanic == "mental_projection":
+        applications.extend([
+            "Telepathic abilities trigger traumatic flashbacks in both user and target",
+            "Can only read minds of people experiencing similar emotional pain",
+            "Projecting calming thoughts to others helps heal their psychological wounds"
+        ])
+    
+    elif mechanic == "systemic_control" and source == "discipline_mastery":
+        applications.extend([
+            "Influence corporate hierarchies and organizational decision-making",
+            "Coordinate large groups through subtle psychological nudging",
+            "Understand and manipulate supply chains, traffic patterns, social networks"
+        ])
+    
+    # Add general applications if specific ones aren't enough
+    if len(applications) < 3:
+        general_apps = [
+            f"Use {mechanic.replace('_', ' ')} in unexpected non-combat situations",
+            f"Combine power with mundane skills to create unique advantages",
+            f"Turn {limitation.replace('_', ' ')} into a strategic asset rather than weakness",
+            f"Develop workarounds that minimize the impact of power limitations",
+            f"Find ways to help others using abilities in indirect, supportive roles"
+        ]
+        applications.extend(general_apps[:5-len(applications)])
+    
+    return applications[:5]
+
 # Initialize systems on startup
 @app.on_event("startup")
 async def startup_event():
