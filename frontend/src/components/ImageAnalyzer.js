@@ -37,7 +37,10 @@ const CHARACTER_ORIGINS = {
   "magic_user": { name: "Magic User", description: "Powers from mystical/supernatural sources" },
   "cosmic_entity": { name: "Cosmic Entity", description: "Being of cosmic or divine nature" },
   "android": { name: "Android/Cyborg", description: "Artificial being or human-machine hybrid" },
-  "enhanced_human": { name: "Enhanced Human", description: "Human with augmented abilities" }
+  "enhanced_human": { name: "Enhanced Human", description: "Human with augmented abilities" },
+  "nootropic_enhanced": { name: "Nootropic Enhanced", description: "Enhanced through experimental cognitive drugs" },
+  "biotech_subject": { name: "Biotech Subject", description: "Modified through cutting-edge biotechnology" },
+  "self_optimized": { name: "Self-Optimized", description: "Achieved enhancement through systematic self-improvement" }
 };
 
 const SOCIAL_STATUS = {
@@ -50,7 +53,11 @@ const SOCIAL_STATUS = {
   "military": "Military/Government",
   "criminal": "Criminal Underworld",
   "academic": "Academic/Scientist",
-  "celebrity": "Public Figure/Celebrity"
+  "celebrity": "Public Figure/Celebrity",
+  "entrepreneurial": "Self-Made Entrepreneur",
+  "old_money": "Generational Wealth",
+  "nouveau_riche": "New Money/Tech Wealth",
+  "underground_elite": "Shadow Power Broker"
 };
 
 const POWER_SOURCES = {
@@ -63,7 +70,35 @@ const POWER_SOURCES = {
   "cosmic": "Cosmic Event",
   "divine": "Divine/Religious",
   "alien_tech": "Alien Technology",
-  "mutation": "Genetic Mutation"
+  "mutation": "Genetic Mutation",
+  "nootropic_drug": "Experimental Nootropic (NZT-48 style)",
+  "meta_drug": "Meta-Enhancement Drug",
+  "biotech_implant": "Biotech Implantation",
+  "neural_enhancement": "Neural Network Optimization",
+  "self_evolution": "Conscious Self-Evolution",
+  "symbiotic_merger": "Symbiotic Entity Merger",
+  "dimensional_exposure": "Dimensional Energy Exposure"
+};
+
+const POWER_EVOLUTION_STAGES = {
+  "initial": "Initial Enhancement",
+  "adaptive": "Adaptive Development", 
+  "synergistic": "Mind-Body Synergy",
+  "transcendent": "Transcendent State",
+  "systemic": "System-Level Mastery"
+};
+
+const GEOGRAPHIC_CONTEXTS = {
+  "detroit": "Detroit - Industrial Rebirth",
+  "chicago": "Chicago - Urban Power Dynamics", 
+  "new_york": "New York - Financial Hub",
+  "los_angeles": "Los Angeles - Entertainment Complex",
+  "miami": "Miami - International Gateway",
+  "atlanta": "Atlanta - Southern Power Center",
+  "seattle": "Seattle - Tech Innovation Hub",
+  "international": "International Operations",
+  "multi_city": "Multi-City Network",
+  "rural_urban": "Rural-Urban Corridor"
 };
 
 const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
