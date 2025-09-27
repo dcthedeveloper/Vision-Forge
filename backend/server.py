@@ -1350,57 +1350,56 @@ def _get_freshness_rating(score: float) -> str:
         return "Needs Innovation"
 
 async def enhance_trope_suggestions_with_ollama(base_suggestions: List[str], trope_analyses, character_data: Dict) -> List[str]:
-    """Use Ollama to enhance and personalize trope improvement suggestions"""
+    """Use Ollama to enhance and personalize trope improvement suggestions with timeout protection"""
     try:
-        # Create character and trope context
-        character_context = f"""
-Character Overview:
-- Origin: {character_data.get('character_origin', 'Unknown')}
-- Power Source: {character_data.get('power_source', 'Unknown')}
-- Archetype Tags: {', '.join(character_data.get('archetype_tags', []))}
-- Social Status: {character_data.get('social_status', 'Unknown')}
+        # Quick timeout protection - if we have good base suggestions, use them
+        if len(base_suggestions) >= 3:
+            # Try Ollama enhancement with short timeout
+            try:
+                # Create simplified character context for faster processing
+                high_risk_tropes = [t.trope_name for t in trope_analyses if t.cliché_score > 0.6]
+                fresh_elements = [t.trope_name for t in trope_analyses if t.cliché_score < 0.3]
+                
+                prompt = f"""Character: {character_data.get('character_origin', 'Unknown')} with {character_data.get('power_source', 'Unknown')} powers.
 
-Trope Analysis Summary:
-- Total Tropes Found: {len(trope_analyses)}
-- High-Risk Tropes: {', '.join([t.trope_name for t in trope_analyses if t.cliché_score > 0.6])}
-- Fresh Elements: {', '.join([t.trope_name for t in trope_analyses if t.cliché_score < 0.3])}
+High-risk tropes: {', '.join(high_risk_tropes[:3])}
+Fresh elements: {', '.join(fresh_elements[:2])}
 
-Base Suggestions: {', '.join(base_suggestions)}
-"""
-        
-        prompt = f"""Based on the character analysis and identified tropes, provide 3-5 specific, actionable suggestions to make this character more original and engaging. Focus on concrete character development advice rather than generic writing tips.
+Provide 3 specific suggestions to improve this character's originality:
+1. How to subvert the highest-risk trope
+2. How to build on fresh elements  
+3. One concrete scene/story idea
 
-{character_context}
-
-Provide suggestions that:
-1. Address the highest-risk clichéd elements
-2. Build on the character's existing fresh elements
-3. Offer specific narrative possibilities
-4. Consider the character's genre and context
-5. Are practical for writers to implement
-
-Enhanced suggestions:"""
+Suggestions:"""
+                
+                # Use shorter, more focused prompt and lower temperature for speed
+                response = await asyncio.wait_for(
+                    ollama_text_generation(prompt, temperature=0.5), 
+                    timeout=15.0  # 15 second timeout
+                )
+                
+                # Simple parsing - look for numbered suggestions
+                enhanced_suggestions = []
+                for line in response.split('\n'):
+                    line = line.strip()
+                    if line and (line.startswith('1.') or line.startswith('2.') or line.startswith('3.') or line.startswith('-')):
+                        suggestion = re.sub(r'^[-\d.]+\s*', '', line)
+                        if suggestion and len(suggestion) > 10:  # Basic quality check
+                            enhanced_suggestions.append(suggestion)
+                
+                if len(enhanced_suggestions) >= 2:  # If we got decent results
+                    return enhanced_suggestions[:5]
+                    
+            except asyncio.TimeoutError:
+                logger.warning("Ollama enhancement timed out, using base suggestions")
+            except Exception as ollama_error:
+                logger.warning(f"Ollama enhancement failed: {ollama_error}")
         
-        response = await ollama_text_generation(prompt, temperature=0.7)
-        
-        # Parse the response into a list of suggestions
-        enhanced_suggestions = []
-        for line in response.split('\n'):
-            line = line.strip()
-            if line and (line.startswith('-') or line.startswith('•') or line.startswith('1.') or line.startswith('2.') or line.startswith('3.') or line.startswith('4.') or line.startswith('5.')):
-                # Clean up the suggestion text
-                suggestion = re.sub(r'^[-•\d.]+\s*', '', line)
-                if suggestion:
-                    enhanced_suggestions.append(suggestion)
-        
-        # If parsing failed, return the original suggestions
-        if not enhanced_suggestions:
-            return base_suggestions
-        
-        return enhanced_suggestions[:5]  # Limit to 5 suggestions
+        # Fallback: return enhanced base suggestions
+        return base_suggestions
         
     except Exception as e:
-        logger.warning(f"Failed to enhance suggestions with Ollama: {e}")
+        logger.warning(f"Failed to enhance suggestions: {e}")
         return base_suggestions
 
 # Initialize systems on startup
