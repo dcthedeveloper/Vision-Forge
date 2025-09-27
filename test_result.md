@@ -154,7 +154,7 @@ backend:
     implemented: true
     working: false
     file: "enhanced_trope_meter.py, server.py, TropeRiskMeter.js"
-    stuck_count: 1
+    stuck_count: 2
     priority: "high"
     needs_retesting: false
     status_history:
@@ -164,6 +164,9 @@ backend:
         - working: false
         - agent: "testing"
         - comment: "CRITICAL ISSUE: Trope Risk Meter API endpoint /api/analyze-trope-risk consistently times out (>45 seconds) due to Ollama processing delays. Fixed missing 'import re' in server.py (was causing 'name re is not defined' error). Core trope analysis logic appears functional, but Ollama enhancement in enhance_trope_suggestions_with_ollama() is causing severe performance bottleneck. Ollama runner consuming 161% CPU. Endpoint unusable in current state - needs optimization or timeout handling."
+        - working: false
+        - agent: "testing"
+        - comment: "FINAL COMPREHENSIVE TEST: Timeout fixes implemented but STILL FAILING. System under extreme load with Ollama runner consuming 172% CPU for 70+ minutes. All 9 endpoints tested - Core endpoints (health, genres, beat-sheet-types) respond quickly, but any Ollama-dependent endpoints (text generation, image analysis, trope analysis) cause system overload. Trope analysis endpoint has 20s timeout protection but Ollama enhancement still causes severe bottleneck. Main agent has implemented timeout handling in enhance_trope_suggestions_with_ollama() but concurrent Ollama requests overwhelm system. CRITICAL: Endpoint remains unusable due to resource exhaustion."
 
 frontend:
   - task: "UI Compatibility with Ollama Backend"
