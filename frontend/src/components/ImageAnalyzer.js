@@ -104,16 +104,18 @@ const GEOGRAPHIC_CONTEXTS = {
 const ImageAnalyzer = ({ onAnalysisComplete, onCharacterCreated }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [selectedGenre, setSelectedGenre] = useState("urban_realistic");
-  const [characterOrigin, setCharacterOrigin] = useState("human");
-  const [socialStatus, setSocialStatus] = useState("middle_class");
-  const [powerSource, setPowerSource] = useState("innate");
-  const [additionalTags, setAdditionalTags] = useState([]);
+  const [characterOrigin, setCharacterOrigin] = useState("nootropic_enhanced");
+  const [socialStatus, setSocialStatus] = useState("entrepreneurial");
+  const [powerSource, setPowerSource] = useState("nootropic_drug");
+  const [evolutionStage, setEvolutionStage] = useState("synergistic");
+  const [geographicContext, setGeographicContext] = useState("detroit");
+  const [additionalTags, setAdditionalTags] = useState(["System Changer", "Power Broker"]);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState(null);
   const [currentCharacter, setCurrentCharacter] = useState(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [previewUrl, setPreviewUrl] = useState(null);
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(true);
 
   const ADDITIONAL_TAGS = [
     "Anti-Hero", "Villain", "Morally Grey", "Reluctant Hero", "Team Leader",
