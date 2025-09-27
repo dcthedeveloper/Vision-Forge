@@ -10,7 +10,7 @@ import { Zap, Sparkles, Target, TrendingUp, Brain, Shield, Clock, Users, Lightbu
 
 const AdvancedPowerSystem = ({ aiSettings = { provider: 'ollama', safetyLevel: 'moderate' } }) => {
   const [themes, setThemes] = useState([]);
-  const [selectedTheme, setSelectedTheme] = useState('');
+  const [selectedTheme, setSelectedTheme] = useState('none');
   const [complexityLevel, setComplexityLevel] = useState('moderate');
   const [characterContext, setCharacterContext] = useState({});
   const [generatedSystem, setGeneratedSystem] = useState(null);
