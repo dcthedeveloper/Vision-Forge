@@ -168,6 +168,18 @@ backend:
         - agent: "testing"
         - comment: "FINAL COMPREHENSIVE TEST: Timeout fixes implemented but STILL FAILING. System under extreme load with Ollama runner consuming 172% CPU for 70+ minutes. All 9 endpoints tested - Core endpoints (health, genres, beat-sheet-types) respond quickly, but any Ollama-dependent endpoints (text generation, image analysis, trope analysis) cause system overload. Trope analysis endpoint has 20s timeout protection but Ollama enhancement still causes severe bottleneck. Main agent has implemented timeout handling in enhance_trope_suggestions_with_ollama() but concurrent Ollama requests overwhelm system. CRITICAL: Endpoint remains unusable due to resource exhaustion."
 
+  - task: "Advanced Power System Framework"
+    implemented: true
+    working: true
+    file: "power_system_framework.py, server.py"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+        - agent: "testing"
+        - comment: "COMPREHENSIVE TESTING COMPLETE: Advanced Power System Framework fully functional and exceeds specifications. ✅ Power System Themes endpoint (/api/power-system-themes) returns all 6 narrative themes (identity_crisis, power_corruption, inherited_trauma, technological_anxiety, social_stratification, existential_purpose) with proper structure. ✅ Advanced Power System Generation (/api/generate-power-system) working perfectly with all test configurations: Simple request (default parameters), With theme (narrative_focus + complexity_level), With character context (character_origin + social_status + complexity_level). ✅ All enum values properly handled with good variety across generations. ✅ Power metrics in reasonable range (0.1-0.9) as specified. ✅ Creative suggestions return exactly 5 specific applications. ✅ Thematic coherence between source/mechanic/limitation confirmed. ✅ JSON responses properly formatted. ✅ Expected response structure verified: power_source (type, name, description), mechanic (type, name, description), limitations (primary + optional secondary), progression model, power_metrics (6 numerical values 0.0-1.0), narrative_elements (themes, societal_role, philosophical question), creative_suggestions (5 specific applications). Framework represents sophisticated analysis of power system patterns from 20+ fictional works without performance issues. All tests passed with 100% success rate."
+
 frontend:
   - task: "UI Compatibility with Ollama Backend"
     implemented: true
