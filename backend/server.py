@@ -917,7 +917,7 @@ Focus on realism and avoid generic fantasy terms. Make powers fit the origin and
         response = await get_image_analysis(image_b64, full_prompt)
         
         # Parse response
-        response_text = str(response)
+        response_text = response
         try:
             if "```json" in response_text:
                 json_start = response_text.find("```json") + 7
